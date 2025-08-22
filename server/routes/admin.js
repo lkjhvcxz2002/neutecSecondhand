@@ -1,0 +1,411 @@
+const express = require('express');
+const { body, validationResult, query } = require('express-validator');
+const { db } = require('../database/init');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
+
+const router = express.Router();
+
+// 所有管理員路由都需要管理員權限
+router.use(authenticateToken, requireAdmin);
+
+// 獲取所有用戶
+router.get('/users', [
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 100 }),
+  query('status').optional().isIn(['active', 'suspended']),
+  query('search').optional().trim()
+], (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: '查詢參數驗證失敗', errors: errors.array() });
+    }
+
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      search
+    } = req.query;
+
+    let whereConditions = [];
+    let queryParams = [];
+    let offset = (page - 1) * limit;
+
+    if (status) {
+      whereConditions.push('status = ?');
+      queryParams.push(status);
+    }
+
+    if (search) {
+      whereConditions.push('(name LIKE ? OR email LIKE ?)');
+      queryParams.push(`%${search}%`, `%${search}%`);
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    // 獲取用戶總數
+    const countQuery = `SELECT COUNT(*) as total FROM users ${whereClause}`;
+
+    db.get(countQuery, queryParams, (err, countResult) => {
+      if (err) {
+        return res.status(500).json({ message: '資料庫錯誤' });
+      }
+
+      const total = countResult.total;
+
+      // 獲取用戶列表
+      const usersQuery = `
+        SELECT id, email, name, avatar, telegram, role, status, created_at, updated_at
+        FROM users 
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+      `;
+
+      const finalParams = [...queryParams, limit, offset];
+
+      db.all(usersQuery, finalParams, (err, users) => {
+        if (err) {
+          return res.status(500).json({ message: '資料庫錯誤' });
+        }
+
+        res.json({
+          users,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            pages: Math.ceil(total / limit)
+          }
+        });
+      });
+    });
+  } catch (error) {
+    console.error('獲取用戶錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// 更新用戶狀態
+router.patch('/users/:id/status', [
+  body('status').isIn(['active', 'suspended'])
+], (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: '輸入資料驗證失敗', errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // 檢查是否為自己
+    if (parseInt(id) === req.user.userId) {
+      return res.status(400).json({ message: '不能停權自己的帳號' });
+    }
+
+    const query = 'UPDATE users SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+
+    db.run(query, [status, id], function(err) {
+      if (err) {
+        return res.status(500).json({ message: '更新狀態失敗' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ message: '用戶不存在' });
+      }
+
+      res.json({ 
+        message: `用戶狀態已更新為 ${status === 'active' ? '啟用' : '停權'}` 
+      });
+    });
+  } catch (error) {
+    console.error('更新用戶狀態錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// 更新用戶角色
+router.patch('/users/:id/role', [
+  body('role').isIn(['user', 'admin'])
+], (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: '輸入資料驗證失敗', errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { role } = req.body;
+
+    // 檢查是否為自己
+    if (parseInt(id) === req.user.userId) {
+      return res.status(400).json({ message: '不能修改自己的角色' });
+    }
+
+    const query = 'UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+
+    db.run(query, [role, id], function(err) {
+      if (err) {
+        return res.status(500).json({ message: '更新角色失敗' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ message: '用戶不存在' });
+      }
+
+      res.json({ 
+        message: `用戶角色已更新為 ${role === 'admin' ? '管理員' : '一般用戶'}` 
+      });
+    });
+  } catch (error) {
+    console.error('更新用戶角色錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// 獲取所有商品（管理員視角）
+router.get('/products', [
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 100 }),
+  query('status').optional().isIn(['active', 'sold', 'inactive']),
+  query('category').optional().trim(),
+  query('search').optional().trim()
+], (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: '查詢參數驗證失敗', errors: errors.array() });
+    }
+
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      category,
+      search
+    } = req.query;
+
+    let whereConditions = [];
+    let queryParams = [];
+    let offset = (page - 1) * limit;
+
+    if (status) {
+      whereConditions.push('p.status = ?');
+      queryParams.push(status);
+    }
+
+    if (category) {
+      whereConditions.push('p.category = ?');
+      queryParams.push(category);
+    }
+
+    if (search) {
+      whereConditions.push('(p.title LIKE ? OR p.description LIKE ?)');
+      queryParams.push(`%${search}%`, `%${search}%`);
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    // 獲取商品總數
+    const countQuery = `SELECT COUNT(*) as total FROM products p ${whereClause}`;
+
+    db.get(countQuery, queryParams, (err, countResult) => {
+      if (err) {
+        return res.status(500).json({ message: '資料庫錯誤' });
+      }
+
+      const total = countResult.total;
+
+      // 獲取商品列表
+      const productsQuery = `
+        SELECT 
+          p.*,
+          u.name as seller_name,
+          u.email as seller_email,
+          u.telegram as seller_telegram
+        FROM products p
+        JOIN users u ON p.user_id = u.id
+        ${whereClause}
+        ORDER BY p.created_at DESC
+        LIMIT ? OFFSET ?
+      `;
+
+      const finalParams = [...queryParams, limit, offset];
+
+      db.all(productsQuery, finalParams, (err, products) => {
+        if (err) {
+          return res.status(500).json({ message: '資料庫錯誤' });
+        }
+
+        // 處理圖片路徑
+        const processedProducts = products.map(product => {
+          if (product.images) {
+            try {
+              product.images = JSON.parse(product.images);
+            } catch (e) {
+              product.images = [];
+            }
+          } else {
+            product.images = [];
+          }
+          return product;
+        });
+
+        res.json({
+          products: processedProducts,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            pages: Math.ceil(total / limit)
+          }
+        });
+      });
+    });
+  } catch (error) {
+    console.error('獲取商品錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// 管理員下架商品
+router.patch('/products/:id/status', [
+  body('status').isIn(['active', 'inactive'])
+], (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: '輸入資料驗證失敗', errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const query = 'UPDATE products SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+
+    db.run(query, [status, id], function(err) {
+      if (err) {
+        return res.status(500).json({ message: '更新狀態失敗' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ message: '商品不存在' });
+      }
+
+      res.json({ 
+        message: `商品狀態已更新為 ${status === 'active' ? '上架' : '下架'}` 
+      });
+    });
+  } catch (error) {
+    console.error('更新商品狀態錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// 獲取系統統計資料
+router.get('/stats', (req, res) => {
+  try {
+    // 獲取用戶統計
+    db.get('SELECT COUNT(*) as total_users FROM users', (err, userStats) => {
+      if (err) {
+        return res.status(500).json({ message: '資料庫錯誤' });
+      }
+
+      // 獲取商品統計
+      db.get('SELECT COUNT(*) as total_products FROM products', (err, productStats) => {
+        if (err) {
+          return res.status(500).json({ message: '資料庫錯誤' });
+        }
+
+        // 獲取活躍商品統計
+        db.get('SELECT COUNT(*) as active_products FROM products WHERE status = "active"', (err, activeStats) => {
+          if (err) {
+            return res.status(500).json({ message: '資料庫錯誤' });
+          }
+
+          // 獲取分類統計
+          db.all('SELECT category, COUNT(*) as count FROM products GROUP BY category', (err, categoryStats) => {
+            if (err) {
+              return res.status(500).json({ message: '資料庫錯誤' });
+            }
+
+            res.json({
+              stats: {
+                totalUsers: userStats.total_users,
+                totalProducts: productStats.total_products,
+                activeProducts: activeStats.active_products,
+                categoryBreakdown: categoryStats
+              }
+            });
+          });
+        });
+      });
+    });
+  } catch (error) {
+    console.error('獲取統計資料錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// 獲取系統設定
+router.get('/settings', (req, res) => {
+  try {
+    db.all('SELECT * FROM system_settings', (err, settings) => {
+      if (err) {
+        return res.status(500).json({ message: '資料庫錯誤' });
+      }
+
+      const settingsMap = {};
+      settings.forEach(setting => {
+        settingsMap[setting.key] = {
+          value: setting.value,
+          description: setting.description
+        };
+      });
+
+      res.json({ settings: settingsMap });
+    });
+  } catch (error) {
+    console.error('獲取系統設定錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// 更新系統設定
+router.put('/settings/:key', [
+  body('value').notEmpty()
+], (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: '輸入資料驗證失敗', errors: errors.array() });
+    }
+
+    const { key } = req.params;
+    const { value } = req.body;
+
+    const query = 'UPDATE system_settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?';
+
+    db.run(query, [value, key], function(err) {
+      if (err) {
+        return res.status(500).json({ message: '更新設定失敗' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ message: '設定項目不存在' });
+      }
+
+      res.json({ 
+        message: '系統設定已更新',
+        setting: { key, value }
+      });
+    });
+  } catch (error) {
+    console.error('更新系統設定錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+module.exports = router;
