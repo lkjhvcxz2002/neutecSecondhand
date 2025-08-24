@@ -1,39 +1,59 @@
 <template>
   <div class="min-h-screen">
       <h1 class="page-title">上架新商品</h1>
-      <div class="card">
+      <div class="w-full"> 
+        <Declaration />
+      </div>
+      <div class="card mt-4">
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <div>
-            <label for="title" class="block text-sm font-medium text-gray-700">商品標題 *</label>
+            <label for="title" class="block text-sm font-medium text-gray-700">
+              商品標題 * 
+              <span class="text-xs text-gray-500 ml-2">
+                ({{ form.title.length }}/40)
+              </span>
+            </label>
             <input
               id="title"
               v-model="form.title"
               type="text"
               required
+              maxlength="40"
               class="input-field mt-1"
               placeholder="請輸入商品標題"
             />
+            <div class="text-xs text-gray-500 mt-1">
+              剩餘 {{ 40 - form.title.length }} 字
+            </div>
           </div>
 
           <div>
-            <label for="description" class="block text-sm font-medium text-gray-700">商品描述</label>
+            <label for="description" class="block text-sm font-medium text-gray-700">
+              商品描述
+              <span class="text-xs text-gray-500 ml-2">
+                ({{ form.description.length }}/300)
+              </span>
+            </label>
             <textarea
               id="description"
               v-model="form.description"
               rows="4"
+              maxlength="300"
               class="input-field mt-1"
               placeholder="請描述您的商品..."
             ></textarea>
+            <div class="text-xs text-gray-500 mt-1">
+              剩餘 {{ 300 - form.description.length }} 字
+            </div>
           </div>
 
           <!-- 交易方式: 贈送、交換、買賣-->
           <div>
             <label for="trade-type" class="block text-sm font-medium text-gray-700">交易方式 *</label>
             <select v-model="form.tradeType" @change="handleTradeTypeChange" required class="input-field mt-1">
-              <option value="">請選擇交易方式</option>
-              <option value="贈送">贈送</option>
-              <option value="交換">交換 (請備註於商品描述內)</option>
               <option value="買賣">買賣</option>
+              <option value="贈送">贈送</option>
+              <option value="交換">交換 (方法請備註於商品描述內)</option>
             </select>
           </div>
           
@@ -128,6 +148,7 @@ import { useRouter } from 'vue-router'
 import { useProductsStore } from '@/stores/products'
 import { TradeType } from '@/ts/index.enums'
 import CategorySelect from '@/components/CategorySelect.vue'
+import Declaration from '@/components/Declaration.vue'
 
 const router = useRouter()
 const productsStore = useProductsStore()
@@ -137,7 +158,7 @@ const form = ref({
   description: '',
   price: '',
   category: '',
-  tradeType: '',
+  tradeType: TradeType.Sell,
   images: []
 })
 

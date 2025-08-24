@@ -65,6 +65,12 @@ router.get('/', [
 
     let whereConditions = ['p.status = ?'];
     let queryParams = [status];
+
+    // 如果狀態為 active，則查詢 active 和 processing 的商品
+    if(status === 'active') {
+      whereConditions = ['p.status IN (?, ?)'];
+      queryParams = ['active', 'processing'];
+    }
     let offset = (page - 1) * limit;
 
     if (category) {
@@ -155,6 +161,52 @@ router.get('/', [
     });
   } catch (error) {
     console.error('獲取商品錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// 獲取用戶商品
+router.get('/my-products', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    const query = `
+      SELECT 
+        p.*,
+        u.name as seller_name,
+        u.telegram as seller_telegram
+      FROM products p
+      JOIN users u ON p.user_id = u.id
+      WHERE p.user_id = ?
+      ORDER BY p.created_at DESC
+    `;
+
+    db.all(query, [userId], (err, products) => {
+      if (err) {
+        return res.status(500).json({ message: '資料庫錯誤' });
+      }
+
+      // 處理圖片路徑
+      const processedProducts = products.map(product => {
+        if (product.images) {
+          try {
+            product.images = JSON.parse(product.images);
+          } catch (e) {
+            product.images = [];
+          }
+        } else {
+          product.images = [];
+        }
+        return product;
+      });
+
+      res.json({
+        products: processedProducts,
+        total: processedProducts.length
+      });
+    });
+  } catch (error) {
+    console.error('獲取用戶商品錯誤:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
@@ -381,7 +433,7 @@ router.put('/:id', authenticateToken, requireOwnerOrAdmin, upload.array('images'
 
 // 更新商品狀態
 router.patch('/:id/status', authenticateToken, requireOwnerOrAdmin, [
-  body('status').isIn(['active', 'sold', 'inactive'])
+  body('status').isIn(['active', 'processing', 'sold', 'inactive'])
 ], (req, res) => {
   try {
     const errors = validationResult(req);

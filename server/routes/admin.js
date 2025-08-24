@@ -408,4 +408,76 @@ router.put('/settings/:key', [
   }
 });
 
+// 獲取維護模式狀態
+router.get('/maintenance', (req, res) => {
+  try {
+    db.get('SELECT value FROM system_settings WHERE key = "maintenance_mode"', (err, result) => {
+      if (err) {
+        return res.status(500).json({ message: '資料庫錯誤' });
+      }
+
+      const isMaintenanceMode = result ? result.value === 'true' : false;
+      res.json({ 
+        maintenanceMode: isMaintenanceMode,
+        message: '維護模式狀態已獲取'
+      });
+    });
+  } catch (error) {
+    console.error('獲取維護模式狀態錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// 切換維護模式
+router.post('/maintenance/toggle', (req, res) => {
+  try {
+    // 先獲取當前狀態
+    db.get('SELECT value FROM system_settings WHERE key = "maintenance_mode"', (err, result) => {
+      console.log(result);
+      if (err) {
+        return res.status(500).json({ message: '資料庫錯誤' });
+      }
+
+      const currentMode = result ? result.value === 'true' : false;
+      const newMode = !currentMode;
+      const newValue = newMode.toString();
+
+      // 更新或插入維護模式設定
+      const upsertQuery = `
+        INSERT OR REPLACE INTO system_settings (key, value, description, updated_at) 
+        VALUES ('maintenance_mode', ?, '系統維護模式', CURRENT_TIMESTAMP)
+      `;
+
+      db.run(upsertQuery, [newValue], function(err) {
+        if (err) {
+          return res.status(500).json({ message: '更新維護模式失敗' });
+        }
+
+        // 記錄操作日誌
+        const logQuery = `
+          INSERT INTO admin_logs (admin_id, action, details, ip_address, created_at)
+          VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `;
+        
+        const logDetails = `維護模式${newMode ? '啟用' : '關閉'}`;
+        const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
+        
+        db.run(logQuery, [req.user.userId, 'toggle_maintenance', logDetails, ipAddress], (logErr) => {
+          if (logErr) {
+            console.error('記錄操作日誌失敗:', logErr);
+          }
+        });
+
+        res.json({ 
+          message: `維護模式已${newMode ? '啟用' : '關閉'}`,
+          maintenanceMode: newMode
+        });
+      });
+    });
+  } catch (error) {
+    console.error('切換維護模式錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
 module.exports = router;

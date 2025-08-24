@@ -12,8 +12,11 @@
       </p>
     </div>
 
-    <Declaration />
-    <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+    <!-- 免責聲明 -->
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+      <Declaration />
+    </div>
+    <div class="mt-4 sm:mx-auto sm:w-full sm:max-w-md">
       <div class="card">
         <form class="space-y-6" @submit.prevent="handleLogin">
           <div>

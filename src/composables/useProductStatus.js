@@ -6,7 +6,7 @@ export function useProductStatus(productStatus) {
   const productStatusClass = computed(() => {
     const classMap = {
       [ProductStatus.Active]: 'text-green-600',
-      [ProductStatus.Processing]: 'text-blue-600',
+      [ProductStatus.Processing]: 'text-yellow-600',
       [ProductStatus.Sold]: 'text-red-600',
       [ProductStatus.Inactive]: 'text-gray-600'
     }
@@ -16,7 +16,7 @@ export function useProductStatus(productStatus) {
   // 商品状态显示文本映射
   const productStatusText = computed(() => {
     const textMap = {
-      [ProductStatus.Active]: '上架中',
+      [ProductStatus.Active]: '已上架',
       [ProductStatus.Processing]: '交易中',
       [ProductStatus.Sold]: '已售出',
       [ProductStatus.Inactive]: '已下架'
@@ -28,7 +28,7 @@ export function useProductStatus(productStatus) {
   const productStatusBorderClass = computed(() => {
     const borderMap = {
       [ProductStatus.Active]: 'border-green-500',
-      [ProductStatus.Processing]: 'border-blue-500',
+      [ProductStatus.Processing]: 'border-yellow-500',
       [ProductStatus.Sold]: 'border-red-500',
       [ProductStatus.Inactive]: 'border-gray-500'
     }
@@ -39,7 +39,7 @@ export function useProductStatus(productStatus) {
   const productStatusBgClass = computed(() => {
     const bgMap = {
       [ProductStatus.Active]: 'bg-green-500',
-      [ProductStatus.Processing]: 'bg-blue-500',
+      [ProductStatus.Processing]: 'bg-yellow-500',
       [ProductStatus.Sold]: 'bg-red-500',
       [ProductStatus.Inactive]: 'bg-gray-500'
     }

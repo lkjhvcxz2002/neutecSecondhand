@@ -42,11 +42,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">分類</label>
             <select v-model="selectedCategory" class="input-field">
               <option value="">全部分類</option>
-              <option value="電子產品">電子產品</option>
-              <option value="服飾">服飾</option>
-              <option value="書籍">書籍</option>
-              <option value="家具">家具</option>
-              <option value="其他">其他</option>
+              <option v-for="category in ProductCategory" :key="category" :value="category">{{ category }}</option>
             </select>
           </div>
           
@@ -54,14 +50,12 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">狀態</label>
             <select v-model="selectedStatus" class="input-field">
               <option value="">全部狀態</option>
-              <option value="active">上架中</option>
-              <option value="sold">已售出</option>
-              <option value="inactive">已下架</option>
+              <option v-for="status in availableProductStatus" :key="status" :value="status">{{ getProductStatusText(status) }}</option>
             </select>
           </div>
         </div>
         
-                 <!-- 清除篩選按鈕 -->
+          <!-- 清除篩選按鈕 -->
          <div class="form-actions">
           <button @click="clearFilters" class="btn-secondary px-6">
             清除篩選
@@ -69,11 +63,11 @@
         </div>
       </div>
       
-             <!-- 當前篩選條件顯示 -->
+        <!-- 當前篩選條件顯示 -->
        <div v-if="hasActiveFilters" class="card-footer">
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-sm text-gray-600">當前篩選:</span>
-                     <span 
+          <span 
              v-if="searchQuery" 
              class="filter-tag filter-tag-blue"
            >
@@ -103,13 +97,12 @@
       <div class="text-gray-500">載入中...</div>
     </div>
     
-    <div v-else-if="filteredProducts.length === 0" class="text-center py-12">
+    <div v-else-if="!hasAvailableProducts" class="text-center py-12">
       <div class="text-gray-500">沒有找到商品</div>
     </div>
-    
     <div v-else class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div 
-        v-for="product in filteredProducts" 
+        v-for="product in productsStore.filteredProducts" 
         :key="product.id"
         class="card hover:shadow-lg transition-shadow cursor-pointer relative"
         @click="$router.push(`/products/${product.id}`)"
@@ -159,18 +152,16 @@ import { useProductsStore } from '@/stores/products'
 import { useIndexStore } from '@/stores/index'
 import Icon from '@/components/Icon.vue'
 import { useTradeType } from '@/composables/useTradeType'
-import { TradeType } from '@/ts/index.enums'
+import { TradeType, ProductCategory, ProductStatus } from '@/ts/index.enums'
 import { useProductStatus } from '@/composables/useProductStatus'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 
 const productsStore = useProductsStore()
 const indexStore = useIndexStore()
 
-// 使用交易类型 composable 的辅助函数
-const { tradeTypeClass, tradeTypeText } = useTradeType(ref(''))
-
-// 使用商品状态 composable 的辅助函数
-const { productStatusText, productStatusBorderClass, productStatusBgClass } = useProductStatus(ref(''))
+const hasAvailableProducts = computed(() => {
+  return productsStore.filteredProducts && productsStore.filteredProducts.length > 0
+})
 
 // 获取交易类型样式的辅助函数
 const getTradeTypeClass = (tradeType) => {
@@ -190,48 +181,15 @@ const getProductStatusText = (status) => {
   return productStatusText.value
 }
 
-// 获取商品状态边框样式的辅助函数
-const getProductStatusBorderClass = (status) => {
-  const { productStatusBorderClass } = useProductStatus(ref(status))
-  return productStatusBorderClass.value
-}
-
-// 获取商品状态背景样式的辅助函数
-const getProductStatusBgClass = (status) => {
-  const { productStatusBgClass } = useProductStatus(ref(status))
-  return productStatusBgClass.value
-}
-
 const searchQuery = ref('')
 const selectedCategory = ref('')
 const selectedStatus = ref('')
 const showFilters = ref(false) // 控制篩選器顯示/隱藏
+const availableProductStatus = ref([ProductStatus.Active, ProductStatus.Processing])
 
 // 判斷是否顯示完整篩選器
 const displayFullFilters = computed(() => {
   return showFilters.value || indexStore.isDesktop
-})
-
-const filteredProducts = computed(() => {
-  let filtered = productsStore.products
-  
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(p => 
-      p.title.toLowerCase().includes(query) ||
-      p.description.toLowerCase().includes(query)
-    )
-  }
-  
-  if (selectedCategory.value) {
-    filtered = filtered.filter(p => p.category === selectedCategory.value)
-  }
-  
-  if (selectedStatus.value) {
-    filtered = filtered.filter(p => p.status === selectedStatus.value)
-  }
-  
-  return filtered
 })
 
 const clearFilters = () => {
@@ -250,15 +208,6 @@ const hasActiveFilters = computed(() => {
   return searchQuery.value || selectedCategory.value || selectedStatus.value
 })
 
-// 獲取狀態文本
-const getStatusText = (status) => {
-  const statusMap = {
-    'active': '上架中',
-    'sold': '已售出',
-    'inactive': '已下架'
-  }
-  return statusMap[status] || status
-}
 
 onMounted(async () => {
   await productsStore.fetchProducts()
@@ -267,6 +216,11 @@ onMounted(async () => {
 // 監聽篩選條件變化
 watch([searchQuery, selectedCategory, selectedStatus], () => {
   // 這裡可以觸發新的搜尋請求，但目前沒有實作 
+  productsStore.setFilters({
+    search: searchQuery.value,
+    category: selectedCategory.value,
+    status: selectedStatus.value
+  })
 })
 </script>
 

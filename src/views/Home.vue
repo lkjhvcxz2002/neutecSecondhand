@@ -5,8 +5,9 @@
         歡迎來到風格妍究社 - 二手交換平台
       </h2>
       <p class="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-        在這裡，您可以輕鬆地與同事交換或購買二手物品，讓資源得到更好的利用，同時促進同事間的交流。
+        在這裡，您可以輕鬆地與同事交換或購買二手物品，讓資源得到更好的利用。
       </p>
+      <!-- <p class="text-gray-600 text-lg mb-4 italic">別讓你的寶貝，躺在角落裡發霉。</p> -->
       <div class="flex justify-center space-x-4">
         <router-link 
           to="/products" 
@@ -33,17 +34,15 @@
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">輕鬆上架</h3>
-        <p class="text-gray-600">簡單幾步即可上架您的二手物品，支援多張圖片上傳</p>
+        <p class="text-gray-600">簡單幾步即可上架您的二手物品 (需註冊)，支援多張圖片上傳</p>
       </div>
       
       <div class="bg-white rounded-lg p-6 text-center border border-gray-100">
         <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
+          <Icon name="shopping-cart" class="w-8 h-8" color="primary" />
         </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">快速搜尋</h3>
-        <p class="text-gray-600">強大的搜尋和篩選功能，讓您快速找到心儀的商品</p>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">快速交易</h3>
+        <p class="text-gray-600">透過Telegram直接聯繫賣家，無須註冊即可快速購買商品</p>
       </div>
       
       <div class="bg-white rounded-lg p-6 text-center border border-gray-100">
@@ -55,6 +54,17 @@
         <h3 class="text-xl font-semibold text-gray-900 mb-2">安全交易</h3>
         <p class="text-gray-600">公司內部平台，同事間直接聯繫，安全可靠</p>
       </div>
+    </div>
+
+    <!-- Bug 回報按鈕 -->
+    <div class="text-center mb-16">
+      <button 
+        @click="openBugReport"
+        class="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+      >
+        <Icon name="exclamation-triangle" class="w-5 h-5" />
+        發現問題？回報 Bug
+      </button>
     </div>
 
     <!-- 最新商品 -->
@@ -118,6 +128,7 @@ import { useProductsStore } from '@/stores/products'
 import { useTradeType } from '@/composables/useTradeType'
 import { TradeType } from '@/ts/index.enums'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
+import Icon from '@/components/Icon.vue'
 
 const authStore = useAuthStore()
 const productsStore = useProductsStore()
@@ -141,6 +152,11 @@ const getTradeTypeClass = (tradeType) => {
 const getTradeTypeText = (tradeType) => {
   const { tradeTypeText } = useTradeType(ref(tradeType))
   return tradeTypeText.value
+}
+
+const openBugReport = () => {
+  const telegramUrl = 'https://t.me/ParkerDuTW'
+  window.open(telegramUrl, '_blank')
 }
 
 </script>

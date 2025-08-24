@@ -12,8 +12,10 @@
       </p>
     </div>
 
-    <!-- 加入一段免責聲明 -->
-    <Declaration @agree="isAgree = $event" need-agree-button />
+    <!-- 免責聲明 -->
+    <div class="sm:mx-auto sm:w-full sm:max-w-md">
+      <Declaration @agree="isAgree = $event" need-agree-button />
+    </div>
     <div class="mt-4 sm:mx-auto sm:w-full sm:max-w-md">
       <div class="card">
         <form class="space-y-6" @submit.prevent="handleRegister">
@@ -30,7 +32,7 @@
                 autocomplete="name"
                 required
                 class="input-field"
-                placeholder="Parker Du"
+                placeholder="請輸入您的暱稱"
               />
             </div>
           </div>
@@ -127,17 +129,26 @@
           </div>
 
           <div>
-            <label for="telegram" class="block text-sm font-medium text-gray-700">
-              Telegram 聯絡方式（選填）
+            <label for="telegram" class="block text-sm font-medium text-gray-700 flex justify-between">
+              <span>Telegram 帳號</span>
+              <Tooltip 
+                text="如何找到您的Telegram帳號：&#10;1. 打開Telegram應用&#10;2. 點擊左上角選單&#10;3. 查看您的用戶名（@username）&#10;4. 或者點擊您的頭像查看完整資料"
+                position="top"
+              >
+                <span class="text-xs text-gray-500 cursor-help">
+                  <Icon name="information-circle" class="w-4 h-4" />
+                </span>
+              </Tooltip>
             </label>
             <div class="mt-1">
               <input
                 id="telegram"
                 v-model="form.telegram"
+                @input="handleTelegramInput"
                 name="telegram"
                 type="text"
                 class="input-field"
-                placeholder="請輸入您的 Telegram 帳號"
+                placeholder="Telegram 帳號，方便買家聯繫您"
               />
             </div>
           </div>
@@ -173,6 +184,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import Declaration from '@/components/Declaration.vue'
+import Icon from '@/components/Icon.vue'
+import Tooltip from '@/components/Tooltip.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -193,7 +206,8 @@ const isFormValid = computed(() => {
   return form.value.name.trim() &&
          isEmailValid.value &&
          isPasswordValid.value &&
-         isConfirmPasswordValid.value
+         isConfirmPasswordValid.value &&
+         form.value.telegram.trim()
 })
 
 // 郵箱驗證
@@ -276,6 +290,12 @@ const getPasswordStrengthText = computed(() => {
   return { text: '弱', color: 'text-red-500' }
 })
 
+const handleTelegramInput = () => {
+  if(form.value.telegram.includes('@')) {
+    form.value.telegram = form.value.telegram.replace('@', '')
+  }
+}
+
 const handleRegister = async () => {
   if (!isAgree.value) {
     errorMessage.value = '請先同意免責聲明'
@@ -293,6 +313,8 @@ const handleRegister = async () => {
       errorMessage.value = getPasswordError.value
     } else if (getConfirmPasswordError.value) {
       errorMessage.value = getConfirmPasswordError.value
+    } else if (!form.value.telegram.trim()) {
+      errorMessage.value = '請輸入 Telegram 聯絡方式'
     } else {
       errorMessage.value = '請填寫所有必填欄位'
     }
@@ -303,7 +325,7 @@ const handleRegister = async () => {
     name: form.value.name.trim(),
     email: form.value.email.trim(),
     password: form.value.password,
-    telegram: form.value.telegram.trim() || undefined
+    telegram: form.value.telegram.trim()
   }
   
   const result = await authStore.register(userData)

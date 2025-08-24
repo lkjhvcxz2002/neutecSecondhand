@@ -210,18 +210,38 @@ export const useProductsStore = defineStore('products', () => {
     }
   }
 
+  // 獲取用戶商品
+  const userProducts = ref([])
+  const userProductsLoading = ref(false)
+
+  const fetchUserProducts = async () => {
+    try {
+      userProductsLoading.value = true
+      const response = await axios.get('/api/products/my-products')
+      userProducts.value = response.data.products
+    } catch (error) {
+      console.error('獲取用戶商品失敗:', error)
+      userProducts.value = []
+    } finally {
+      userProductsLoading.value = false
+    }
+  }
+
   return {
     products,
     currentProduct,
     loading,
     filters,
     filteredProducts,
+    userProducts,
+    userProductsLoading,
     fetchProducts,
     fetchProduct,
     createProduct,
     updateProduct,
     deleteProduct,
     updateProductStatus,
+    fetchUserProducts,
     setFilters,
     clearFilters
   }

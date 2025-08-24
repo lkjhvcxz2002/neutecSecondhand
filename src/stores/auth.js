@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import { UserStatus } from '@/ts/index.enums'
+
 
 export const useAuthStore = defineStore('auth', () => {
   // 使用者資料
@@ -83,6 +85,10 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await axios.get('/api/auth/me')
       user.value = response.data.user
+
+      if(user.value.status === UserStatus.Suspended) {
+        logout()
+      }
     } catch (error) {
       logout()
     }

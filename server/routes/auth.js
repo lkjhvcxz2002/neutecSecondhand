@@ -119,14 +119,19 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    // 查找用戶
-    db.get('SELECT * FROM users WHERE email = ? AND status = "active"', [email], async (err, user) => {
+    // 先查找用戶（不限制狀態）
+    db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
       if (err) {
         return res.status(500).json({ message: '資料庫錯誤' });
       }
 
       if (!user) {
         return res.status(401).json({ message: '郵箱或密碼錯誤' });
+      }
+
+      // 檢查用戶狀態
+      if (user.status !== 'active') {
+        return res.status(403).json({ message: '帳戶已被封鎖' });
       }
 
       // 驗證密碼
@@ -256,7 +261,7 @@ router.post('/forgot-password', [
     const { email } = req.body;
 
     // 檢查用戶是否存在
-    db.get('SELECT id, name FROM users WHERE email = ? AND status = "active"', [email], (err, user) => {
+    db.get('SELECT id, name, status FROM users WHERE email = ?', [email], (err, user) => {
       if (err) {
         return res.status(500).json({ message: '資料庫錯誤' });
       }
@@ -264,6 +269,11 @@ router.post('/forgot-password', [
       if (!user) {
         // 為了安全，即使用戶不存在也返回成功訊息
         return res.json({ message: '如果郵箱存在，重設密碼連結已發送' });
+      }
+
+      // 檢查用戶狀態
+      if (user.status !== 'active') {
+        return res.status(403).json({ message: '帳戶已被封鎖，無法重設密碼' });
       }
 
       // 這裡應該發送重設密碼郵件

@@ -7,6 +7,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const adminRoutes = require('./routes/admin');
+const maintenanceRoutes = require('./routes/maintenance');
 const { initDatabase } = require('./database/init');
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/maintenance', maintenanceRoutes);
 
 // 健康檢查
 app.get('/api/health', (req, res) => {

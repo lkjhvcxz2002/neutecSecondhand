@@ -57,7 +57,13 @@ import {
   PencilIcon,
   UserPlusIcon,
   UserCircleIcon,
-  ArrowRightStartOnRectangleIcon
+  ArrowRightStartOnRectangleIcon,
+  TrashIcon,
+  ArrowPathIcon,
+  ShoppingBagIcon,
+  InformationCircleIcon,
+  ExclamationTriangleIcon,
+  WrenchScrewdriverIcon
 } from '@heroicons/vue/24/outline'
 
 // 定义props
@@ -144,7 +150,13 @@ const iconMap = {
   'pencil': PencilIcon,
   'user-plus': UserPlusIcon,
   'user-circle': UserCircleIcon,
-  'arrow-right-start-on-rectangle': ArrowRightStartOnRectangleIcon
+  'arrow-right-start-on-rectangle': ArrowRightStartOnRectangleIcon,
+  'trash': TrashIcon,
+  'arrow-path': ArrowPathIcon,
+  'shopping-bag': ShoppingBagIcon,
+  'information-circle': InformationCircleIcon,
+  'exclamation-triangle': ExclamationTriangleIcon,
+  'wrench-screwdriver': WrenchScrewdriverIcon
 }
 
 // 动态获取图标组件

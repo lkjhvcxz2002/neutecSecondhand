@@ -9,8 +9,8 @@
             <div class="flex items-center space-x-6">
               <div class="w-24 h-24">
                 <img 
-                  v-if="form.avatar || authStore.user?.avatar" 
-                  :src="form.avatar || authStore.user?.avatar" 
+                  v-if="form.avatarPreview || authStore.user?.avatar" 
+                  :src="form.avatarPreview || authStore.user?.avatar" 
                   alt="頭像"
                   class="w-24 h-24 rounded-full object-cover"
                 />
@@ -45,13 +45,24 @@
             </div>
 
             <div>
-              <label for="telegram" class="block text-sm font-medium text-gray-700">Telegram 聯絡方式</label>
+              <label for="telegram" class="block text-sm font-medium text-gray-700 flex justify-between">
+                <span>Telegram 聯絡方式</span>
+                <Tooltip 
+                  text="如何找到您的Telegram帳號：&#10;1. 打開Telegram應用&#10;2. 點擊左上角選單&#10;3. 查看您的用戶名（@username）&#10;4. 或者點擊您的頭像查看完整資料"
+                  position="top"
+                >
+                  <span class="text-xs text-gray-500 cursor-help">
+                    <Icon name="information-circle" class="w-4 h-4" />
+                  </span>
+                </Tooltip>
+              </label>
               <input
                 id="telegram"
                 v-model="form.telegram"
                 type="text"
                 class="input-field mt-1"
                 placeholder="請輸入您的 Telegram 帳號"
+                @input="handleTelegramInput"
               />
             </div>
 
@@ -78,15 +89,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import Tooltip from '@/components/Tooltip.vue'
+import Icon from '@/components/Icon.vue'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 const form = ref({
   name: '',
   telegram: '',
-  avatar: null
+  avatar: null,
+  avatarPreview: null
 })
 
 const message = ref('')
@@ -101,7 +117,19 @@ const messageClass = computed(() => {
 const handleAvatarChange = (event) => {
   const file = event.target.files[0]
   if (file) {
+    // 清理之前的預覽 URL
+    if (form.value.avatarPreview) {
+      URL.revokeObjectURL(form.value.avatarPreview)
+    }
     form.value.avatar = file
+    // 創建預覽 URL
+    form.value.avatarPreview = URL.createObjectURL(file)
+  }
+}
+
+const handleTelegramInput = () => {
+  if(form.value.telegram.includes('@')) {
+    form.value.telegram = form.value.telegram.replace('@', '')
   }
 }
 
@@ -120,6 +148,17 @@ const handleUpdateProfile = async () => {
     messageType.value = 'success'
     // 重新載入用戶資料
     await authStore.fetchUser()
+    
+    // 清理預覽 URL
+    if (form.value.avatarPreview) {
+      URL.revokeObjectURL(form.value.avatarPreview)
+      form.value.avatarPreview = null
+    }
+
+    // 回到首頁
+    setTimeout(() => {
+      router.push('/')
+    }, 1000)
   } else {
     message.value = result.message
     messageType.value = 'error'
@@ -127,9 +166,17 @@ const handleUpdateProfile = async () => {
 }
 
 onMounted(async () => {
+  await authStore.fetchUser()
   if (authStore.user) {
     form.value.name = authStore.user.name || ''
     form.value.telegram = authStore.user.telegram || ''
+  }
+})
+
+onUnmounted(() => {
+  // 清理預覽 URL，避免記憶體洩漏
+  if (form.value.avatarPreview) {
+    URL.revokeObjectURL(form.value.avatarPreview)
   }
 })
 </script>

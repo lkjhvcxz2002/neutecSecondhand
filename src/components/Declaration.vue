@@ -1,12 +1,13 @@
 <template>
-  <div class="card mt-2 flex flex-col justify-center sm:mx-auto sm:w-full sm:max-w-md">
-    <p class="text-sm text-gray-600">
+  <div class="card mt-2 flex flex-col justify-center">
+    <div class="text-sm text-gray-600">
       <ul class="list-disc list-inside">
         <li>此為公司內部系統，僅供公司員工使用</li>
-        <li>若交易過程中發生任何糾紛，公司與福委會皆不會協助協調，且不可使用公司名義發起交易。</li>
+        <li>僅接受二手商品交易，不得用於其他營利用途</li>
+        <li>若交易過程中發生任何糾紛，公司與福委會皆不會協助協調。交易行為僅為個人行為，與公司無關。</li>
         <li>不得由社團或公司名義發起販售交易/盈利活動，當然也不可變賣/轉讓社團資產。</li>
       </ul>
-    </p>
+    </div>
     <div v-if="needAgreeButton" class="mt-2 flex justify-center">
       <!-- 我同意按鈕 -->
       <div class="flex items-center" @click="handleAgree">

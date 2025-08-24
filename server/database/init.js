@@ -65,6 +65,19 @@ async function initDatabase() {
         )
       `);
 
+      // 建立管理員操作日誌表
+      db.run(`
+        CREATE TABLE IF NOT EXISTS admin_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          admin_id INTEGER NOT NULL,
+          action TEXT NOT NULL,
+          details TEXT,
+          ip_address TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (admin_id) REFERENCES users (id)
+        )
+      `);
+
       // 插入預設管理員帳號
       db.get("SELECT id FROM users WHERE email = 'admin@company.com'", (err, row) => {
         if (!row) {

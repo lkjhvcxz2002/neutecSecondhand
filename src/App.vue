@@ -15,8 +15,13 @@
 <script setup>
 import Layout from '@/components/Layout.vue'
 import { useIndexStore } from '@/stores/index'
+import { useAuthStore } from '@/stores/auth'
+import { onMounted } from 'vue'
 
-const indexStore = useIndexStore()
+const authStore = useAuthStore()
 
 // 主應用組件
+onMounted(async () => {
+  await authStore.fetchUser()
+})
 </script>

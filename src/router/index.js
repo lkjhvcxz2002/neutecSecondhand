@@ -1,7 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useMaintenanceStore } from '../stores/maintenance'
 
 const routes = [
+  {
+    path: '/maintenance-page',
+    name: 'MaintenancePage',
+    component: () => import('../views/MaintenancePage.vue'),
+    meta: { requiresAuth: false }
+  },
   {
     path: '/',
     name: 'Home',
@@ -30,6 +37,12 @@ const routes = [
     path: '/profile',
     name: 'Profile',
     component: () => import('../views/member/Profile.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-products',
+    name: 'MyProducts',
+    component: () => import('../views/member/MyProducts.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -73,6 +86,13 @@ const routes = [
     name: 'IconDemo',
     component: () => import('../views/system/IconDemo.vue'),
     meta: { requiresAuth: false }
+  },
+  // 404 頁面 - 必須放在最後，捕獲所有不匹配的路徑
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('../views/NotFound.vue'),
+    meta: { requiresAuth: false }
   }
 ]
 
@@ -82,9 +102,27 @@ const router = createRouter({
 })
 
 // 路由守衛
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+  const maintenanceStore = useMaintenanceStore()
+  const skipMaintenanceCheck = ['MaintenancePage', 'Admin', 'Maintenance', 'NotFound']
   
+  // 如果目標是維護頁面或404頁面，直接允許
+  if (to.name === 'MaintenancePage' || to.name === 'NotFound') {
+    return next()
+  }
+  
+  try {
+    // 如果維護模式已啟用，重定向到維護頁面
+    if (maintenanceStore.maintenanceMode.value && !skipMaintenanceCheck.includes(to.name)) {
+      return next('/maintenance-page')
+    }
+  } catch (error) {
+    console.error('檢查維護狀態失敗:', error)
+    // 如果檢查失敗，繼續正常流程
+  }
+  
+  // 正常的權限檢查
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (to.meta.requiresAdmin && !authStore.isAdmin) {
