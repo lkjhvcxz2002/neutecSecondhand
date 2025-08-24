@@ -6,6 +6,8 @@ const { db } = require('../database/init');
 const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
+const { sendPasswordResetEmail, sendWelcomeEmail } = require('../services/emailService');
+const { generateResetToken, validateResetToken, markTokenAsUsed } = require('../services/tokenService');
 
 const router = express.Router();
 
@@ -71,7 +73,7 @@ router.post('/register', [
 
           // 獲取新創建的用戶
           db.get('SELECT id, email, name, avatar, telegram, role, created_at FROM users WHERE id = ?', 
-            [this.lastID], (err, user) => {
+            [this.lastID], async (err, user) => {
             if (err) {
               return res.status(500).json({ message: '獲取用戶資料失敗' });
             }
@@ -82,6 +84,14 @@ router.post('/register', [
               process.env.JWT_SECRET || 'your-secret-key',
               { expiresIn: '7d' }
             );
+
+            // 發送歡迎郵件（非同步，不影響註冊流程）
+            try {
+              await sendWelcomeEmail(email, name);
+            } catch (emailError) {
+              console.error('發送歡迎郵件失敗:', emailError);
+              // 不影響註冊成功
+            }
 
             res.status(201).json({
               message: '註冊成功',
@@ -261,7 +271,7 @@ router.post('/forgot-password', [
     const { email } = req.body;
 
     // 檢查用戶是否存在
-    db.get('SELECT id, name, status FROM users WHERE email = ?', [email], (err, user) => {
+    db.get('SELECT id, name, status FROM users WHERE email = ?', [email], async (err, user) => {
       if (err) {
         return res.status(500).json({ message: '資料庫錯誤' });
       }
@@ -276,15 +286,76 @@ router.post('/forgot-password', [
         return res.status(403).json({ message: '帳戶已被封鎖，無法重設密碼' });
       }
 
-      // 這裡應該發送重設密碼郵件
-      // 由於是內部平台，我們只返回成功訊息
-      res.json({ 
-        message: '重設密碼連結已發送到您的郵箱',
-        note: '請聯繫系統管理員重設密碼'
-      });
+      // 生成重設密碼令牌
+      const resetToken = generateResetToken(user.id);
+
+      // 發送重設密碼郵件
+      try {
+        const emailResult = await sendPasswordResetEmail(email, user.name, resetToken);
+        
+        if (emailResult.success) {
+          res.json({ 
+            message: '重設密碼連結已發送到您的郵箱',
+            note: '請檢查您的郵箱並點擊連結重設密碼'
+          });
+        } else {
+          res.status(500).json({ 
+            message: '發送郵件失敗，請稍後再試或聯繫管理員',
+            error: emailResult.error
+          });
+        }
+      } catch (emailError) {
+        console.error('發送重設密碼郵件失敗:', emailError);
+        res.status(500).json({ 
+          message: '發送郵件失敗，請稍後再試或聯繫管理員'
+        });
+      }
     });
   } catch (error) {
     console.error('忘記密碼錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
+});
+
+// 重設密碼
+router.post('/reset-password', [
+  body('token').notEmpty(),
+  body('password').isLength({ min: 6 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: '輸入資料驗證失敗', errors: errors.array() });
+    }
+
+    const { token, password } = req.body;
+
+    // 驗證令牌
+    const tokenValidation = validateResetToken(token);
+    if (!tokenValidation.valid) {
+      return res.status(400).json({ message: tokenValidation.message });
+    }
+
+    // 加密新密碼
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 更新用戶密碼
+    db.run(
+      'UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [hashedPassword, tokenValidation.userId],
+      function(err) {
+        if (err) {
+          return res.status(500).json({ message: '更新密碼失敗' });
+        }
+
+        // 標記令牌為已使用
+        markTokenAsUsed(token);
+
+        res.json({ message: '密碼重設成功，請使用新密碼登入' });
+      }
+    );
+  } catch (error) {
+    console.error('重設密碼錯誤:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });

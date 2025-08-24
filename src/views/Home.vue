@@ -55,18 +55,6 @@
         <p class="text-gray-600">公司內部平台，同事間直接聯繫，安全可靠</p>
       </div>
     </div>
-
-    <!-- Bug 回報按鈕 -->
-    <div class="text-center mb-16">
-      <button 
-        @click="openBugReport"
-        class="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
-      >
-        <Icon name="exclamation-triangle" class="w-5 h-5" />
-        發現問題？回報 Bug
-      </button>
-    </div>
-
     <!-- 最新商品 -->
     <div v-if="productsStore.products.length > 0">
       <h3 class="text-2xl font-bold text-gray-900 mb-6">最新上架</h3>
@@ -118,6 +106,19 @@
           查看更多商品
         </router-link>
       </div>
+
+      
+      <!-- Bug 回報按鈕 -->
+      <div class="text-center mt-8">
+        <button 
+          @click="openBugReport"
+          class="inline-flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+        >
+          <Icon name="exclamation-triangle" class="w-5 h-5" />
+          發現問題？回報 Bug
+        </button>
+      </div>
+
     </div>
 </template>
 

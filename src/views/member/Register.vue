@@ -334,7 +334,7 @@ const handleRegister = async () => {
     successMessage.value = '註冊成功！正在跳轉...'
     setTimeout(() => {
       router.push('/')
-    }, 1500)
+    }, 500)
   } else {
     errorMessage.value = result.message
   }

@@ -34,6 +34,12 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: () => import('../views/member/ResetPassword.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('../views/member/Profile.vue'),

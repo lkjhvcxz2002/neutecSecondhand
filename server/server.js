@@ -2,20 +2,41 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
-require('dotenv').config();
+
+// 載入環境配置
+const { 
+  loadEnvironmentConfig, 
+  getServerConfig, 
+  getSecurityConfig,
+  showConfigSummary 
+} = require('./config/env');
+
+// 載入環境變數
+loadEnvironmentConfig();
 
 const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const adminRoutes = require('./routes/admin');
 const maintenanceRoutes = require('./routes/maintenance');
 const { initDatabase } = require('./database/init');
+const { verifyEmailConfig } = require('./services/emailService');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+
+// 獲取配置
+const serverConfig = getServerConfig();
+const securityConfig = getSecurityConfig();
 
 // 中間件
-app.use(helmet());
-app.use(cors());
+if (securityConfig.helmetEnabled) {
+  app.use(helmet());
+}
+
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -30,7 +51,12 @@ app.use('/api/maintenance', maintenanceRoutes);
 
 // 健康檢查
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: '二手交換平台API運行中' });
+  res.json({ 
+    status: 'OK', 
+    message: '二手交換平台API運行中',
+    environment: serverConfig.env,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // 錯誤處理中間件
@@ -38,7 +64,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ 
     message: '伺服器內部錯誤',
-    error: process.env.NODE_ENV === 'development' ? err.message : {}
+    error: serverConfig.env === 'development' ? err.message : {}
   });
 });
 
@@ -54,8 +80,18 @@ async function startServer() {
     await initDatabase();
     console.log('資料庫初始化完成');
     
-    app.listen(PORT, () => {
-      console.log(`伺服器運行在 http://localhost:${PORT}`);
+    // 驗證郵件配置
+    const emailConfigValid = await verifyEmailConfig();
+    if (!emailConfigValid) {
+      console.log('⚠️  郵件服務配置有問題，郵件功能可能無法正常使用');
+    }
+    
+    // 顯示配置摘要
+    showConfigSummary();
+    
+    app.listen(serverConfig.port, serverConfig.host, () => {
+      console.log(`🚀 伺服器運行在 http://${serverConfig.host}:${serverConfig.port}`);
+      console.log(`🌍 環境: ${serverConfig.env}`);
       console.log('二手交換平台後端API已啟動');
     });
   } catch (error) {

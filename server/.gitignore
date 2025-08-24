@@ -1,0 +1,55 @@
+# 依賴
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 環境變數檔案
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.env.staging
+
+# 只保留範例檔案
+!.env.*.example
+
+# 日誌
+logs/
+*.log
+
+# 資料庫
+database/*.db
+database/*.sqlite
+
+# 上傳檔案
+uploads/
+!uploads/.gitkeep
+
+# 暫存檔案
+tmp/
+temp/
+
+# 作業系統檔案
+.DS_Store
+Thumbs.db
+
+# IDE 檔案
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 建置輸出
+dist/
+build/
+
+# 覆蓋檔案
+coverage/
+.nyc_output/
+
+# 其他
+*.pid
+*.seed
+*.pid.lock

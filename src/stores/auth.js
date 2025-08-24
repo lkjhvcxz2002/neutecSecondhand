@@ -100,7 +100,7 @@ export const useAuthStore = defineStore('auth', () => {
       loading.value = true
       const response = await axios.put('/api/auth/profile', profileData)
       user.value = response.data.user
-      return { success: true }
+      return { success: true, message: response.data.message || '更新成功' }
     } catch (error) {
       return { 
         success: false, 
