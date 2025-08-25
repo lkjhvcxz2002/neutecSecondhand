@@ -8,6 +8,7 @@ const {
   loadEnvironmentConfig, 
   getServerConfig, 
   getSecurityConfig,
+  getImageCorsConfig,
   showConfigSummary 
 } = require('./config/env');
 
@@ -65,6 +66,33 @@ app.options('*', cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 圖片 CORS 中間件 - 為圖片請求添加 CORS 標頭
+app.use('/uploads', (req, res, next) => {
+  // 獲取圖片 CORS 配置
+  const imageCorsConfig = getImageCorsConfig();
+  
+  // 檢查請求來源
+  const origin = req.headers.origin;
+  
+  // 如果來源在允許列表中，設置 CORS 標頭
+  if (origin && imageCorsConfig.allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  
+  // 設置其他必要的 CORS 標頭
+  res.header('Access-Control-Allow-Methods', imageCorsConfig.allowMethods.join(', '));
+  res.header('Access-Control-Allow-Headers', imageCorsConfig.allowHeaders.join(', '));
+  res.header('Access-Control-Allow-Credentials', imageCorsConfig.allowCredentials.toString());
+  
+  // 處理 OPTIONS 請求
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  
+  next();
+});
 
 // 靜態檔案服務
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

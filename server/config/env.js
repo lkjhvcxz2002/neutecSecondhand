@@ -122,6 +122,21 @@ const getSecurityConfig = () => {
   };
 };
 
+// 獲取圖片 CORS 配置
+const getImageCorsConfig = () => {
+  return {
+    allowedOrigins: [
+      'http://localhost:3000',
+      'https://neutecsecondhand.vercel.app',
+      'https://neutecsecondhand.vercel.app',
+      'https://neutec-secondhand.vercel.app'
+    ],
+    allowCredentials: true,
+    allowMethods: ['GET', 'OPTIONS'],
+    allowHeaders: ['Content-Type']
+  };
+};
+
 // 獲取維護模式配置
 const getMaintenanceConfig = () => {
   return {
@@ -156,6 +171,7 @@ module.exports = {
   getDatabaseConfig,
   getJWTConfig,
   getSecurityConfig,
+  getImageCorsConfig,
   getMaintenanceConfig,
   showConfigSummary
 };

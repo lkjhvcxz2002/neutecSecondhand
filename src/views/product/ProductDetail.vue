@@ -374,14 +374,6 @@ const openTelegramLink = (telegramUsername, product) => {
 onMounted(async () => {
   const productId = route.params.id
   await productsStore.fetchProduct(productId)
-  
-  // 添加键盘事件监听
-  document.addEventListener('keydown', handleKeydown)
-})
-
-// 卸載時移除事件監聽
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown)
 })
 
 // 鍵盤快捷鍵
