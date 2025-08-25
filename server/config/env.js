@@ -132,8 +132,8 @@ const getImageCorsConfig = () => {
       'https://neutec-secondhand.vercel.app'
     ],
     allowCredentials: true,
-    allowMethods: ['GET', 'OPTIONS'],
-    allowHeaders: ['Content-Type']
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
   };
 };
 

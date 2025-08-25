@@ -71,7 +71,7 @@ const corsOptions = {
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
@@ -79,6 +79,17 @@ app.use(cors(corsOptions));
 
 // 處理 OPTIONS 預檢請求
 app.options('*', cors(corsOptions));
+
+// 添加 CORS 調試日誌
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    console.log(`🔄 CORS 預檢請求: ${req.method} ${req.path}`);
+    console.log(`🌐 請求來源: ${req.headers.origin}`);
+    console.log(`📋 請求方法: ${req.headers['access-control-request-method']}`);
+    console.log(`📋 請求標頭: ${req.headers['access-control-request-headers']}`);
+  }
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
