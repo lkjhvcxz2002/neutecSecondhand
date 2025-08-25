@@ -295,6 +295,7 @@ import Icon from '@/components/Icon.vue'
 import Declaration from '@/components/Declaration.vue'
 import { getProductImageUrl, getAvatarUrl } from '@/utils/imageUrl'
 import { ProductStatus } from '@/ts/index.enums'
+import { getTelegramLink } from '@/composables/useTelegramLink'
 
 const route = useRoute()
 const authStore = useAuthStore()
