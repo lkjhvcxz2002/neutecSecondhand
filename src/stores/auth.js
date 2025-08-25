@@ -86,6 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await axios.get('/api/auth/me')
       user.value = response.data.user
 
+      // 如果使用者被停權，則登出
       if(user.value.status === UserStatus.Suspended) {
         logout()
       }

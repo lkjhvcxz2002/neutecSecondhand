@@ -146,18 +146,18 @@
                       {{ product.seller_name }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <span :class="product.status === 'active' ? 'text-green-600' : 'text-red-600'">
-                        {{ product.status === 'active' ? '上架中' : '已下架' }}
+                      <span :class="product.status === ProductStatus.Inactive ? 'text-red-600' : 'text-green-600'">
+                        {{ product.status === ProductStatus.Inactive ? '已下架' : '上架中' }}
                       </span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button 
                         @click="toggleProductStatus(product)"
                         :disabled="isPageLoading"
-                        :class="product.status === 'active' ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'"
+                        :class="product.status === ProductStatus.Inactive ? 'text-green-600 hover:text-green-900' : 'text-red-600 hover:text-red-900'"
                         class="disabled:opacity-50"
                       >
-                        {{ product.status === 'active' ? '下架' : '上架' }}
+                        {{ product.status === ProductStatus.Inactive ? '上架' : '下架' }}
                       </button>
                     </td>
                   </tr>
@@ -176,6 +176,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAdminStore } from '@/stores/admin'
 import Icon from '@/components/icon.vue'
+import { ProductStatus } from '@/ts/index.enums'
 
 const authStore = useAuthStore()
 const adminStore = useAdminStore()
