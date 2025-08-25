@@ -119,7 +119,7 @@
                   class="relative"
                 >
                   <img 
-                    :src="image" 
+                    :src="getProductImageUrl(image)" 
                     alt="商品圖片"
                     class="w-full h-24 object-cover rounded"
                   />
@@ -137,7 +137,7 @@
                   class="relative"
                 >
                   <img 
-                    :src="preview" 
+                    :src="getProductImageUrl(preview)" 
                     alt="預覽圖片"
                     class="w-full h-24 object-cover rounded"
                   />
@@ -183,6 +183,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '@/stores/products'
 import { TradeType } from '@/ts/index.enums'
 import CategorySelect from '@/components/CategorySelect.vue'
+import { getProductImageUrl } from '@/utils/imageUrl'
 
 const route = useRoute()
 const router = useRouter()

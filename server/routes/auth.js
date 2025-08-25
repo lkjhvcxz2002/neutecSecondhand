@@ -8,13 +8,26 @@ const multer = require('multer');
 const path = require('path');
 const { sendPasswordResetEmail, sendWelcomeEmail } = require('../services/emailService');
 const { generateResetToken, validateResetToken, markTokenAsUsed } = require('../services/tokenService');
+const { getDatabaseConfig } = require('../config/env');
 
 const router = express.Router();
+
+// 獲取上傳路徑配置
+const dbConfig = getDatabaseConfig();
+const uploadPath = dbConfig.uploadPath;
 
 // 配置 multer 用於處理檔案上傳
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/avatars/');
+    // 確保目錄存在
+    const avatarPath = path.join(uploadPath, 'avatars');
+    const fs = require('fs');
+    
+    if (!fs.existsSync(avatarPath)) {
+      fs.mkdirSync(avatarPath, { recursive: true });
+    }
+    
+    cb(null, avatarPath);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

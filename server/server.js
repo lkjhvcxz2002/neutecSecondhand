@@ -10,7 +10,8 @@ const {
   getServerConfig, 
   getSecurityConfig,
   getImageCorsConfig,
-  showConfigSummary 
+  showConfigSummary,
+  getDatabaseConfig
 } = require('./config/env');
 
 // 載入環境變數
@@ -133,10 +134,14 @@ app.get('/uploads/*', (req, res, next) => {
   }
   
   const imagePath = req.path.replace('/uploads', '');
-  const fullPath = path.join(__dirname, 'uploads', imagePath);
+  const fullPath = path.join(getDatabaseConfig().uploadPath, imagePath);
+  
+  console.log(`📁 圖片路徑: ${imagePath}`);
+  console.log(`📁 完整路徑: ${fullPath}`);
   
   // 檢查檔案是否存在
   if (!fs.existsSync(fullPath)) {
+    console.log(`❌ 圖片檔案不存在: ${fullPath}`);
     return res.status(404).json({ message: '圖片不存在' });
   }
   

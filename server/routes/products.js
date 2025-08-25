@@ -5,13 +5,18 @@ const { authenticateToken, requireOwnerOrAdmin } = require('../middleware/auth')
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { getDatabaseConfig } = require('../config/env');
 
 const router = express.Router();
+
+// 獲取上傳路徑配置
+const dbConfig = getDatabaseConfig();
+const uploadPath = dbConfig.uploadPath;
 
 // 配置 multer 用於處理商品圖片上傳
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = 'uploads/products/';
+    const uploadDir = path.join(uploadPath, 'products');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -265,7 +270,7 @@ router.post('/', authenticateToken, upload.array('images', 5), [
     }
 
     const { title, description, price, category, tradeType } = req.body;
-    const images = req.files ? req.files.map(file => `/uploads/products/${file.filename}`) : [];
+    const images = req.files ? req.files.map(file => `/${uploadPath}/products/${file.filename}`) : [];
 
     const query = `
       INSERT INTO products (user_id, title, description, price, category, trade_type, images)
@@ -329,7 +334,7 @@ router.put('/:id', authenticateToken, requireOwnerOrAdmin, upload.array('images'
 
     const { id } = req.params;
     const { title, description, price, category, trade_type } = req.body;
-    const newImages = req.files ? req.files.map(file => `/uploads/products/${file.filename}`) : null;
+    const newImages = req.files ? req.files.map(file => `/${uploadPath}/products/${file.filename}`) : null;
 
     // 獲取現有商品資料
     db.get('SELECT images FROM products WHERE id = ?', [id], (err, existingProduct) => {

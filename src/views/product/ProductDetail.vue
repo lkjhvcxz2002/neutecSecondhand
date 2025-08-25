@@ -246,7 +246,7 @@
       <div class="relative flex items-start">
         <!-- 圖片水平靠上 -->
         <img 
-          :src="currentLightboxImage" 
+          :src="getProductImageUrl(currentLightboxImage)" 
           :alt="`${product.title} - 圖片 ${currentImageIndex + 1}`"
           class="max-w-full max-h-[80vh] object-contain rounded-lg"
         />
