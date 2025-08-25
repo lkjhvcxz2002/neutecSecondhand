@@ -139,7 +139,7 @@
         </div>
 
         <!-- 操作按鈕 -->
-        <div v-if="authStore.isAuthenticated && isProductOwner" class="border-t border-gray-200 pt-4 space-y-3 flex flex-col">
+        <div v-if="authStore.isAuthenticated && isProductOwner && product.status" class="border-t border-gray-200 pt-4 space-y-3 flex flex-col">
           <!-- 編輯商品 -->
           <router-link 
             :to="`/edit-product/${product.id}`"
@@ -197,7 +197,7 @@
   <div v-if="statusConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
     <div class="bg-white p-6 rounded-lg">
       <h2 class="text-lg font-bold text-gray-900 mb-4">確認狀態變更</h2>
-      <p class="text-gray-600 mb-4">
+      <p v-if="newStatus" class="text-gray-600 mb-4">
         確認
         <span v-if="newStatus === ProductStatus.Processing">
           切換為交易中

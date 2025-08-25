@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
+const fs = require('fs');
 
 // 載入環境配置
 const { 
@@ -94,8 +95,35 @@ app.use('/uploads', (req, res, next) => {
   next();
 });
 
-// 靜態檔案服務
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// 專門的圖片服務路由 - 確保 CORS 標頭正確設置
+app.get('/uploads/*', (req, res, next) => {
+  const imagePath = req.path.replace('/uploads', '');
+  const fullPath = path.join(__dirname, 'uploads', imagePath);
+  
+  // 檢查檔案是否存在
+  if (!fs.existsSync(fullPath)) {
+    return res.status(404).json({ message: '圖片不存在' });
+  }
+  
+  // 設置正確的 Content-Type
+  const ext = path.extname(fullPath).toLowerCase();
+  const mimeTypes = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp'
+  };
+  
+  const contentType = mimeTypes[ext] || 'application/octet-stream';
+  res.setHeader('Content-Type', contentType);
+  
+  // 設置快取標頭
+  res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1年快取
+  
+  // 發送檔案
+  res.sendFile(fullPath);
+});
 
 // 路由
 app.use('/api/auth', authRoutes);
