@@ -37,9 +37,6 @@ const loadEnvironmentConfig = () => {
 // 驗證必要配置
 const validateRequiredConfig = () => {
   const required = [
-    'EMAIL_SERVICE',
-    'EMAIL_USER', 
-    'EMAIL_PASS',
     'JWT_SECRET'
   ];
   
@@ -49,6 +46,15 @@ const validateRequiredConfig = () => {
     console.error(`❌ 缺少必要配置: ${missing.join(', ')}`);
     console.error('請檢查環境變數檔案是否包含所有必要配置');
     process.exit(1);
+  }
+  
+  // 檢查郵件配置（可選）
+  const emailRequired = ['EMAIL_SERVICE', 'EMAIL_USER', 'EMAIL_PASS'];
+  const emailMissing = emailRequired.filter(key => !process.env[key]);
+  
+  if (emailMissing.length > 0) {
+    console.warn(`⚠️  郵件配置不完整: ${emailMissing.join(', ')}`);
+    console.warn('郵件功能將被禁用');
   }
   
   console.log('✅ 所有必要配置已驗證');
@@ -70,18 +76,24 @@ const getEmailConfig = () => {
 
 // 獲取伺服器配置
 const getServerConfig = () => {
+  // 在 Railway 環境中使用 0.0.0.0 作為主機
+  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production';
+  
   return {
     port: parseInt(getConfig('PORT', 5000)),
-    host: getConfig('HOST', 'localhost'),
+    host: isRailway ? '0.0.0.0' : getConfig('HOST', 'localhost'),
     env: getConfig('NODE_ENV', 'development')
   };
 };
 
 // 獲取資料庫配置
 const getDatabaseConfig = () => {
+  // 在 Railway 環境中使用記憶體資料庫
+  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production';
+  
   return {
-    path: getConfig('DB_PATH', './database/secondhand.db'),
-    uploadPath: getConfig('UPLOAD_PATH', './uploads'),
+    path: isRailway ? ':memory:' : getConfig('DB_PATH', './database/secondhand.db'),
+    uploadPath: isRailway ? '/tmp/uploads' : getConfig('UPLOAD_PATH', './uploads'),
     maxFileSize: parseInt(getConfig('MAX_FILE_SIZE', 5242880))
   };
 };
@@ -113,13 +125,16 @@ const getMaintenanceConfig = () => {
 
 // 顯示當前配置摘要
 const showConfigSummary = () => {
+  const dbConfig = getDatabaseConfig();
+  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production';
+  
   console.log('\n📋 配置摘要:');
   console.log('================');
   console.log(`環境: ${getConfig('NODE_ENV', 'development')}`);
   console.log(`伺服器: ${getConfig('HOST', 'localhost')}:${getConfig('PORT', 5000)}`);
   console.log(`郵件服務: ${getConfig('EMAIL_SERVICE')}`);
   console.log(`郵件帳號: ${getConfig('EMAIL_USER')}`);
-  console.log(`資料庫: ${getConfig('DB_PATH', './database/secondhand.db')}`);
+  console.log(`資料庫: ${dbConfig.path}${isRailway ? ' (記憶體資料庫)' : ''}`);
   console.log(`維護模式: ${getConfig('MAINTENANCE_MODE', 'false')}`);
   console.log('================\n');
 };
