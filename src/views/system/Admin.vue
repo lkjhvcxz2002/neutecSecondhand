@@ -175,7 +175,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAdminStore } from '@/stores/admin'
-import Icon from '@/components/icon.vue'
+import Icon from '@/components/Icon.vue'
 import { ProductStatus } from '@/ts/index.enums'
 
 const authStore = useAuthStore()
