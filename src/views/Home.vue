@@ -69,7 +69,7 @@
           <!-- 商品圖片 -->
           <div v-if="product.images && product.images.length > 0" class="w-full h-48">
             <img 
-              :src="product.images[0]" 
+              :src="getProductImageUrl(product.images[0])" 
               :alt="product.title"
               class="w-full h-48 object-cover rounded-lg mb-4"
             />
@@ -130,6 +130,7 @@ import { useTradeType } from '@/composables/useTradeType'
 import { TradeType } from '@/ts/index.enums'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import Icon from '@/components/Icon.vue'
+import { getProductImageUrl } from '@/utils/imageUrl'
 
 const authStore = useAuthStore()
 const productsStore = useProductsStore()

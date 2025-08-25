@@ -61,7 +61,7 @@
               <ProductStatusTag :status="product.status" class="absolute" />
               <div v-if="product.images && product.images.length > 0" class="w-full h-full">
                 <img 
-                  :src="product.images[0]" 
+                  :src="getProductImageUrl(product.images[0])" 
                   :alt="product.title"
                   class="w-full h-full object-cover rounded-lg"
                 />
@@ -183,9 +183,11 @@ import { useProductsStore } from '@/stores/products'
 import { useAuthStore } from '@/stores/auth'
 import { useTradeType } from '@/composables/useTradeType'
 import { useProductStatus } from '@/composables/useProductStatus'
+import { TradeType, ProductStatus } from '@/ts/index.enums'
 import Layout from '@/components/Layout.vue'
 import Icon from '@/components/Icon.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
+import { getProductImageUrl } from '@/utils/imageUrl'
 
 const router = useRouter()
 const productsStore = useProductsStore()

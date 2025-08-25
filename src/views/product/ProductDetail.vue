@@ -15,7 +15,7 @@
           <!-- 先暫時將第一張圖片作為主圖 -->
           <div class="w-full h-96">
             <img 
-              :src="product.images[0]" 
+              :src="getProductImageUrl(product.images[0])" 
               :alt="`${product.title} - 主圖`"
               class="w-full h-96 object-cover rounded-lg"
             />
@@ -31,7 +31,7 @@
             <div v-for="(image, index) in product.images" :key="index" class="w-1/3">
               <div class="relative group" @click="openLightbox(index)">
                 <img 
-                  :src="image" 
+                  :src="getProductImageUrl(image)" 
                   :alt="`${product.title} - 縮略圖 ${index + 1}`"
                   class="w-full h-24 object-cover rounded-lg border-2 border-gray-200 cursor-pointer hover:border-primary-500 hover:shadow-lg transition-all duration-200 group-hover:scale-105"
                 />
@@ -107,7 +107,7 @@
             <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
               <img 
                 v-if="product.seller_avatar"
-                :src="product.seller_avatar" 
+                :src="getAvatarUrl(product.seller_avatar)" 
                 :alt="`${product.seller_name} - 頭像`"
                 class="w-full h-full object-cover rounded-full"
               />
@@ -284,17 +284,18 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '@/stores/products'
-import { ProductStatus } from '@/ts/index.enums'
-import Icon from '@/components/Icon.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useIndexStore } from '@/stores/index'
 import { useTradeType } from '@/composables/useTradeType'
 import { useProductStatus } from '@/composables/useProductStatus'
-import { getTelegramLink } from '@/composables/useTelegramLink'
+import { TradeType } from '@/ts/index.enums'
+import Layout from '@/components/Layout.vue'
+import Icon from '@/components/Icon.vue'
 import Declaration from '@/components/Declaration.vue'
-import { useIndexStore } from '@/stores/index'
+import { getProductImageUrl, getAvatarUrl } from '@/utils/imageUrl'
 
 const route = useRoute()
 const authStore = useAuthStore()

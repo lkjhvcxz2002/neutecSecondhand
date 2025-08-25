@@ -10,7 +10,7 @@
               <div class="w-24 h-24">
                 <img 
                   v-if="form.avatarPreview || authStore.user?.avatar" 
-                  :src="form.avatarPreview || authStore.user?.avatar" 
+                  :src="form.avatarPreview || getAvatarUrl(authStore.user?.avatar)" 
                   alt="頭像"
                   class="w-24 h-24 rounded-full object-cover"
                 />
@@ -127,9 +127,11 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useIndexStore } from '@/stores/index'
 import Tooltip from '@/components/Tooltip.vue'
 import Icon from '@/components/Icon.vue'
 import { useRouter } from 'vue-router'
+import { getAvatarUrl } from '@/utils/imageUrl'
 
 const authStore = useAuthStore()
 const router = useRouter()
