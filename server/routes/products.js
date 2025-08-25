@@ -270,7 +270,10 @@ router.post('/', authenticateToken, upload.array('images', 5), [
     }
 
     const { title, description, price, category, tradeType } = req.body;
-    const images = req.files ? req.files.map(file => `/${uploadPath}/products/${file.filename}`) : [];
+    const images = req.files ? req.files.map(file => `/uploads/products/${file.filename}`) : [];
+    
+    console.log(`📸 商品圖片路徑:`, images);
+    console.log(`📁 實際上傳路徑: ${uploadPath}/products/`);
 
     const query = `
       INSERT INTO products (user_id, title, description, price, category, trade_type, images)
@@ -334,7 +337,10 @@ router.put('/:id', authenticateToken, requireOwnerOrAdmin, upload.array('images'
 
     const { id } = req.params;
     const { title, description, price, category, trade_type } = req.body;
-    const newImages = req.files ? req.files.map(file => `/${uploadPath}/products/${file.filename}`) : null;
+    const newImages = req.files ? req.files.map(file => `/uploads/products/${file.filename}`) : null;
+    
+    console.log(`📸 更新商品圖片路徑:`, newImages);
+    console.log(`📁 實際上傳路徑: ${uploadPath}/products/`);
 
     // 獲取現有商品資料
     db.get('SELECT images FROM products WHERE id = ?', [id], (err, existingProduct) => {
