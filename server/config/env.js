@@ -76,11 +76,13 @@ const getEmailConfig = () => {
 
 // 獲取伺服器配置
 const getServerConfig = () => {
-  // 在 Railway 環境中使用 0.0.0.0 作為主機
-  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production';
+  // 檢測是否在 Railway 環境中
+  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production' || 
+                    process.env.RAILWAY_PROJECT_ID || 
+                    process.env.RAILWAY_SERVICE_NAME;
   
   return {
-    port: parseInt(getConfig('PORT', 5000)),
+    port: parseInt(process.env.PORT) || parseInt(getConfig('PORT', 5000)),
     host: isRailway ? '0.0.0.0' : getConfig('HOST', 'localhost'),
     env: getConfig('NODE_ENV', 'development')
   };
@@ -88,8 +90,10 @@ const getServerConfig = () => {
 
 // 獲取資料庫配置
 const getDatabaseConfig = () => {
-  // 在 Railway 環境中使用記憶體資料庫
-  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production';
+  // 檢測是否在 Railway 環境中
+  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production' || 
+                    process.env.RAILWAY_PROJECT_ID || 
+                    process.env.RAILWAY_SERVICE_NAME;
   
   return {
     path: isRailway ? ':memory:' : getConfig('DB_PATH', './database/secondhand.db'),
@@ -126,12 +130,15 @@ const getMaintenanceConfig = () => {
 // 顯示當前配置摘要
 const showConfigSummary = () => {
   const dbConfig = getDatabaseConfig();
-  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production';
+  const serverConfig = getServerConfig();
+  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production' || 
+                    process.env.RAILWAY_PROJECT_ID || 
+                    process.env.RAILWAY_SERVICE_NAME;
   
   console.log('\n📋 配置摘要:');
   console.log('================');
   console.log(`環境: ${getConfig('NODE_ENV', 'development')}`);
-  console.log(`伺服器: ${getConfig('HOST', 'localhost')}:${getConfig('PORT', 5000)}`);
+  console.log(`伺服器: ${serverConfig.host}:${serverConfig.port}`);
   console.log(`郵件服務: ${getConfig('EMAIL_SERVICE')}`);
   console.log(`郵件帳號: ${getConfig('EMAIL_USER')}`);
   console.log(`資料庫: ${dbConfig.path}${isRailway ? ' (記憶體資料庫)' : ''}`);
