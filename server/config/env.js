@@ -116,7 +116,9 @@ const getSecurityConfig = () => {
     helmetEnabled: getConfig('HELMET_ENABLED', 'true') === 'true',
     rateLimitEnabled: getConfig('RATE_LIMIT_ENABLED', 'false') === 'true',
     rateLimitWindow: parseInt(getConfig('RATE_LIMIT_WINDOW', 900000)),
-    rateLimitMax: parseInt(getConfig('RATE_LIMIT_MAX', 100))
+    rateLimitMax: parseInt(getConfig('RATE_LIMIT_MAX', 100)),
+    corsEnabled: getConfig('CORS_ENABLED', 'true') === 'true',
+    allowedOrigins: getConfig('ALLOWED_ORIGINS', 'http://localhost:3000,https://neutecsecondhand.vercel.app').split(',')
   };
 };
 
