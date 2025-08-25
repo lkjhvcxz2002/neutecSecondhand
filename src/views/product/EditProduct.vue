@@ -137,7 +137,7 @@
                   class="relative"
                 >
                   <img 
-                    :src="getProductImageUrl(preview)" 
+                    :src="preview" 
                     alt="預覽圖片"
                     class="w-full h-24 object-cover rounded"
                   />
@@ -221,7 +221,7 @@ const isFormValid = computed(() => {
          form.value.category
 })
 
-const handleImageChange = (event) => {
+const handleImageChange = async (event) => {
   const files = Array.from(event.target.files)
   
   // 限制圖片數量
@@ -230,17 +230,46 @@ const handleImageChange = (event) => {
     return
   }
   
-  files.forEach(file => {
+  // 使用 Promise 確保檔案和預覽同步
+  for (const file of files) {
     if (file.type.startsWith('image/')) {
-      newImages.value.push(file)
-      
-      // 建立預覽
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        imagePreview.value.push(e.target.result)
+      try {
+        // 先創建預覽
+        const preview = await createImagePreview(file)
+        
+        // 同時添加檔案和預覽
+        newImages.value.push(file)
+        imagePreview.value.push(preview)
+        
+        console.log(`✅ 圖片預覽創建成功:`, {
+          fileName: file.name,
+          fileSize: file.size,
+          previewLength: preview.length,
+          totalImages: newImages.value.length,
+          totalPreviews: imagePreview.value.length
+        })
+      } catch (error) {
+        console.error('創建圖片預覽失敗:', error)
+        alert(`圖片 ${file.name} 預覽失敗`)
       }
-      reader.readAsDataURL(file)
     }
+  }
+}
+
+// 創建圖片預覽的輔助函數
+const createImagePreview = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    
+    reader.onload = (e) => {
+      resolve(e.target.result)
+    }
+    
+    reader.onerror = () => {
+      reject(new Error('讀取檔案失敗'))
+    }
+    
+    reader.readAsDataURL(file)
   })
 }
 
