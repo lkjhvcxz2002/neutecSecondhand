@@ -31,7 +31,22 @@ const securityConfig = getSecurityConfig();
 
 // 中間件
 if (securityConfig.helmetEnabled) {
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:", "blob:"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https:"],
+        scriptSrc: ["'self'"],
+        connectSrc: ["'self'", "https:"],
+        fontSrc: ["'self'", "https:", "data:"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"]
+      }
+    },
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+  }));
 }
 
 // CORS 配置
@@ -68,23 +83,37 @@ app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 圖片 CORS 中間件 - 為圖片請求添加 CORS 標頭
-app.use('/uploads', (req, res, next) => {
+// 專門的圖片服務路由 - 確保 CORS 標頭正確設置
+app.get('/uploads/*', (req, res, next) => {
   // 獲取圖片 CORS 配置
   const imageCorsConfig = getImageCorsConfig();
   
   // 檢查請求來源
   const origin = req.headers.origin;
   
-  // 如果來源在允許列表中，設置 CORS 標頭
+  console.log(`🖼️ 圖片請求: ${req.path}`);
+  console.log(`🌐 請求來源: ${origin}`);
+  console.log(`✅ 允許的來源: ${imageCorsConfig.allowedOrigins.join(', ')}`);
+  
+  // 設置 CORS 標頭 - 必須在發送任何內容之前設置
   if (origin && imageCorsConfig.allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    console.log(`✅ 設置 CORS Origin: ${origin}`);
+  } else {
+    console.log(`❌ 來源不在允許列表中: ${origin}`);
   }
   
   // 設置其他必要的 CORS 標頭
-  res.header('Access-Control-Allow-Methods', imageCorsConfig.allowMethods.join(', '));
-  res.header('Access-Control-Allow-Headers', imageCorsConfig.allowHeaders.join(', '));
-  res.header('Access-Control-Allow-Credentials', imageCorsConfig.allowCredentials.toString());
+  res.setHeader('Access-Control-Allow-Methods', imageCorsConfig.allowMethods.join(', '));
+  res.setHeader('Access-Control-Allow-Headers', imageCorsConfig.allowHeaders.join(', '));
+  res.setHeader('Access-Control-Allow-Credentials', imageCorsConfig.allowCredentials.toString());
+  
+  console.log(`✅ CORS 標頭已設置:`, {
+    'Access-Control-Allow-Origin': res.getHeader('Access-Control-Allow-Origin'),
+    'Access-Control-Allow-Methods': res.getHeader('Access-Control-Allow-Methods'),
+    'Access-Control-Allow-Headers': res.getHeader('Access-Control-Allow-Headers'),
+    'Access-Control-Allow-Credentials': res.getHeader('Access-Control-Allow-Credentials')
+  });
   
   // 處理 OPTIONS 請求
   if (req.method === 'OPTIONS') {
@@ -92,11 +121,6 @@ app.use('/uploads', (req, res, next) => {
     return;
   }
   
-  next();
-});
-
-// 專門的圖片服務路由 - 確保 CORS 標頭正確設置
-app.get('/uploads/*', (req, res, next) => {
   const imagePath = req.path.replace('/uploads', '');
   const fullPath = path.join(__dirname, 'uploads', imagePath);
   
