@@ -16,7 +16,7 @@ app.use(router)
 const maintenanceStore = useMaintenanceStore()
 const authStore = useAuthStore()
 
-await authStore.fetchUser()
-await maintenanceStore.fetchMaintenanceStatus()
+authStore.fetchUser()
+maintenanceStore.fetchMaintenanceStatus()
 
 app.mount('#app')
