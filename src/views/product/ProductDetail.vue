@@ -291,11 +291,10 @@ import { useAuthStore } from '@/stores/auth'
 import { useIndexStore } from '@/stores/index'
 import { useTradeType } from '@/composables/useTradeType'
 import { useProductStatus } from '@/composables/useProductStatus'
-import { TradeType } from '@/ts/index.enums'
-import Layout from '@/components/Layout.vue'
 import Icon from '@/components/Icon.vue'
 import Declaration from '@/components/Declaration.vue'
 import { getProductImageUrl, getAvatarUrl } from '@/utils/imageUrl'
+import { ProductStatus } from '@/ts/index.enums'
 
 const route = useRoute()
 const authStore = useAuthStore()
