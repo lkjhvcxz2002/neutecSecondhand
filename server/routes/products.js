@@ -112,7 +112,7 @@ router.get('/', [
       WHERE ${whereClause}
     `;
 
-    db.get(countQuery, queryParams, (err, countResult) => {
+    railwayDb.get(countQuery, queryParams, (err, countResult) => {
       if (err) {
         return res.status(500).json({ message: '資料庫錯誤' });
       }
@@ -134,7 +134,7 @@ router.get('/', [
 
       const finalParams = [...queryParams, limit, offset];
 
-      db.all(productsQuery, finalParams, (err, products) => {
+      railwayDb.all(productsQuery, finalParams, (err, products) => {
         if (err) {
           return res.status(500).json({ message: '資料庫錯誤' });
         }
@@ -186,7 +186,7 @@ router.get('/my-products', authenticateToken, (req, res) => {
       ORDER BY p.created_at DESC
     `;
 
-    db.all(query, [userId], (err, products) => {
+    railwayDb.all(query, [userId], (err, products) => {
       if (err) {
         return res.status(500).json({ message: '資料庫錯誤' });
       }
@@ -231,7 +231,7 @@ router.get('/:id', (req, res) => {
     WHERE p.id = ?
   `;
 
-  db.get(query, [id], (err, product) => {
+      railwayDb.get(query, [id], (err, product) => {
     if (err) {
       return res.status(500).json({ message: '資料庫錯誤' });
     }
@@ -280,7 +280,7 @@ router.post('/', authenticateToken, upload.array('images', 5), [
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
 
-    db.run(query, [req.user.userId, title, description, price, category, tradeType, JSON.stringify(images)], function(err) {
+    railwayDb.run(query, [req.user.userId, title, description, price, category, tradeType, JSON.stringify(images)], function(err) {
       if (err) {
         return res.status(500).json({ message: '創建商品失敗' });
       }
@@ -296,7 +296,7 @@ router.post('/', authenticateToken, upload.array('images', 5), [
         WHERE p.id = ?
       `;
 
-      db.get(getProductQuery, [this.lastID], (err, product) => {
+      railwayDb.get(getProductQuery, [this.lastID], (err, product) => {
         if (err) {
           return res.status(500).json({ message: '獲取商品資料失敗' });
         }
@@ -343,7 +343,7 @@ router.put('/:id', authenticateToken, requireOwnerOrAdmin, upload.array('images'
     console.log(`📁 實際上傳路徑: ${uploadPath}/products/`);
 
     // 獲取現有商品資料
-    db.get('SELECT images FROM products WHERE id = ?', [id], (err, existingProduct) => {
+    railwayDb.get('SELECT images FROM products WHERE id = ?', [id], (err, existingProduct) => {
       if (err) {
         return res.status(500).json({ message: '資料庫錯誤' });
       }
@@ -400,7 +400,7 @@ router.put('/:id', authenticateToken, requireOwnerOrAdmin, upload.array('images'
 
       const query = `UPDATE products SET ${updateFields.join(', ')} WHERE id = ?`;
 
-      db.run(query, updateValues, function(err) {
+      railwayDb.run(query, updateValues, function(err) {
         if (err) {
           return res.status(500).json({ message: '更新商品失敗' });
         }
@@ -416,7 +416,7 @@ router.put('/:id', authenticateToken, requireOwnerOrAdmin, upload.array('images'
           WHERE p.id = ?
         `;
 
-        db.get(getProductQuery, [id], (err, product) => {
+        railwayDb.get(getProductQuery, [id], (err, product) => {
           if (err) {
             return res.status(500).json({ message: '獲取商品資料失敗' });
           }
@@ -457,7 +457,7 @@ router.patch('/:id/status', authenticateToken, requireOwnerOrAdmin, [
 
     const query = 'UPDATE products SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
 
-    db.run(query, [status, id], function(err) {
+    railwayDb.run(query, [status, id], function(err) {
       if (err) {
         return res.status(500).json({ message: '更新狀態失敗' });
       }
@@ -473,7 +473,7 @@ router.patch('/:id/status', authenticateToken, requireOwnerOrAdmin, [
         WHERE p.id = ?
       `;
 
-      db.get(getProductQuery, [id], (err, product) => {
+      railwayDb.get(getProductQuery, [id], (err, product) => {
         if (err) {
           return res.status(500).json({ message: '獲取商品資料失敗' });
         }
@@ -503,7 +503,7 @@ router.delete('/:id', authenticateToken, requireOwnerOrAdmin, (req, res) => {
   const { id } = req.params;
 
   // 獲取商品圖片以便刪除檔案
-  db.get('SELECT images FROM products WHERE id = ?', [id], (err, product) => {
+  railwayDb.get('SELECT images FROM products WHERE id = ?', [id], (err, product) => {
     if (err) {
       return res.status(500).json({ message: '資料庫錯誤' });
     }
@@ -513,7 +513,7 @@ router.delete('/:id', authenticateToken, requireOwnerOrAdmin, (req, res) => {
     }
 
     // 刪除商品
-    db.run('DELETE FROM products WHERE id = ?', [id], function(err) {
+    railwayDb.run('DELETE FROM products WHERE id = ?', [id], function(err) {
       if (err) {
         return res.status(500).json({ message: '刪除商品失敗' });
       }

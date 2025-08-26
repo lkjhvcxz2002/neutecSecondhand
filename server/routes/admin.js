@@ -47,7 +47,7 @@ router.get('/users', [
     // 獲取用戶總數
     const countQuery = `SELECT COUNT(*) as total FROM users ${whereClause}`;
 
-    db.get(countQuery, queryParams, (err, countResult) => {
+    railwayDb.get(countQuery, queryParams, (err, countResult) => {
       if (err) {
         return res.status(500).json({ message: '資料庫錯誤' });
       }
@@ -65,7 +65,7 @@ router.get('/users', [
 
       const finalParams = [...queryParams, limit, offset];
 
-      db.all(usersQuery, finalParams, (err, users) => {
+      railwayDb.all(usersQuery, finalParams, (err, users) => {
         if (err) {
           return res.status(500).json({ message: '資料庫錯誤' });
         }
@@ -107,7 +107,7 @@ router.patch('/users/:id/status', [
 
     const query = 'UPDATE users SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
 
-    db.run(query, [status, id], function(err) {
+    railwayDb.run(query, [status, id], function(err) {
       if (err) {
         return res.status(500).json({ message: '更新狀態失敗' });
       }
@@ -146,7 +146,7 @@ router.patch('/users/:id/role', [
 
     const query = 'UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
 
-    db.run(query, [role, id], function(err) {
+    railwayDb.run(query, [role, id], function(err) {
       if (err) {
         return res.status(500).json({ message: '更新角色失敗' });
       }
@@ -211,7 +211,7 @@ router.get('/products', [
     // 獲取商品總數
     const countQuery = `SELECT COUNT(*) as total FROM products p ${whereClause}`;
 
-    db.get(countQuery, queryParams, (err, countResult) => {
+    railwayDb.get(countQuery, queryParams, (err, countResult) => {
       if (err) {
         return res.status(500).json({ message: '資料庫錯誤' });
       }
@@ -234,7 +234,7 @@ router.get('/products', [
 
       const finalParams = [...queryParams, limit, offset];
 
-      db.all(productsQuery, finalParams, (err, products) => {
+      railwayDb.all(productsQuery, finalParams, (err, products) => {
         if (err) {
           return res.status(500).json({ message: '資料庫錯誤' });
         }
@@ -285,7 +285,7 @@ router.patch('/products/:id/status', [
 
     const query = 'UPDATE products SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
 
-    db.run(query, [status, id], function(err) {
+    railwayDb.run(query, [status, id], function(err) {
       if (err) {
         return res.status(500).json({ message: '更新狀態失敗' });
       }
@@ -308,25 +308,25 @@ router.patch('/products/:id/status', [
 router.get('/stats', (req, res) => {
   try {
     // 獲取用戶統計
-    db.get('SELECT COUNT(*) as total_users FROM users', (err, userStats) => {
+    railwayDb.get('SELECT COUNT(*) as total_users FROM users', (err, userStats) => {
       if (err) {
         return res.status(500).json({ message: '資料庫錯誤' });
       }
 
       // 獲取商品統計
-      db.get('SELECT COUNT(*) as total_products FROM products', (err, productStats) => {
+      railwayDb.get('SELECT COUNT(*) as total_products FROM products', (err, productStats) => {
         if (err) {
           return res.status(500).json({ message: '資料庫錯誤' });
         }
 
         // 獲取活躍商品統計
-        db.get('SELECT COUNT(*) as active_products FROM products WHERE status = "active"', (err, activeStats) => {
+        railwayDb.get('SELECT COUNT(*) as active_products FROM products WHERE status = "active"', (err, activeStats) => {
           if (err) {
             return res.status(500).json({ message: '資料庫錯誤' });
           }
 
           // 獲取分類統計
-          db.all('SELECT category, COUNT(*) as count FROM products GROUP BY category', (err, categoryStats) => {
+          railwayDb.all('SELECT category, COUNT(*) as count FROM products GROUP BY category', (err, categoryStats) => {
             if (err) {
               return res.status(500).json({ message: '資料庫錯誤' });
             }
@@ -352,7 +352,7 @@ router.get('/stats', (req, res) => {
 // 獲取系統設定
 router.get('/settings', (req, res) => {
   try {
-    db.all('SELECT * FROM system_settings', (err, settings) => {
+    railwayDb.all('SELECT * FROM system_settings', (err, settings) => {
       if (err) {
         return res.status(500).json({ message: '資料庫錯誤' });
       }
@@ -386,9 +386,9 @@ router.put('/settings/:key', [
     const { key } = req.params;
     const { value } = req.body;
 
-    const query = 'UPDATE system_settings SET value = ?, updated_at = CURRENT_TIMESTAMP WHERE key = ?';
+    const query = 'UPDATE system_settings SET setting_value = ?, updated_at = CURRENT_TIMESTAMP WHERE setting_key = ?';
 
-    db.run(query, [value, key], function(err) {
+    railwayDb.run(query, [value, key], function(err) {
       if (err) {
         return res.status(500).json({ message: '更新設定失敗' });
       }
@@ -411,12 +411,12 @@ router.put('/settings/:key', [
 // 獲取維護模式狀態
 router.get('/maintenance', (req, res) => {
   try {
-    db.get('SELECT value FROM system_settings WHERE key = "maintenance_mode"', (err, result) => {
+    railwayDb.get('SELECT setting_value FROM system_settings WHERE setting_key = "maintenance_mode"', (err, result) => {
       if (err) {
         return res.status(500).json({ message: '資料庫錯誤' });
       }
 
-      const isMaintenanceMode = result ? result.value === 'true' : false;
+      const isMaintenanceMode = result ? result.setting_value === 'true' : false;
       res.json({ 
         maintenanceMode: isMaintenanceMode,
         message: '維護模式狀態已獲取'
@@ -432,23 +432,23 @@ router.get('/maintenance', (req, res) => {
 router.post('/maintenance/toggle', (req, res) => {
   try {
     // 先獲取當前狀態
-    db.get('SELECT value FROM system_settings WHERE key = "maintenance_mode"', (err, result) => {
+    railwayDb.get('SELECT setting_value FROM system_settings WHERE setting_key = "maintenance_mode"', (err, result) => {
       console.log(result);
       if (err) {
         return res.status(500).json({ message: '資料庫錯誤' });
       }
 
-      const currentMode = result ? result.value === 'true' : false;
+      const currentMode = result ? result.setting_value === 'true' : false;
       const newMode = !currentMode;
       const newValue = newMode.toString();
 
       // 更新或插入維護模式設定
       const upsertQuery = `
-        INSERT OR REPLACE INTO system_settings (key, value, description, updated_at) 
+        INSERT OR REPLACE INTO system_settings (setting_key, setting_value, description, updated_at) 
         VALUES ('maintenance_mode', ?, '系統維護模式', CURRENT_TIMESTAMP)
       `;
 
-      db.run(upsertQuery, [newValue], function(err) {
+      railwayDb.run(upsertQuery, [newValue], function(err) {
         if (err) {
           return res.status(500).json({ message: '更新維護模式失敗' });
         }
@@ -462,7 +462,7 @@ router.post('/maintenance/toggle', (req, res) => {
         const logDetails = `維護模式${newMode ? '啟用' : '關閉'}`;
         const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
         
-        db.run(logQuery, [req.user.userId, 'toggle_maintenance', logDetails, ipAddress], (logErr) => {
+        railwayDb.run(logQuery, [req.user.userId, 'toggle_maintenance', logDetails, ipAddress], (logErr) => {
           if (logErr) {
             console.error('記錄操作日誌失敗:', logErr);
           }

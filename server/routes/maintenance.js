@@ -6,9 +6,9 @@ const router = express.Router();
 // 公開的維護狀態檢查 API（不需要認證）
 router.get('/status', async (req, res) => {
   try {
-    const result = await railwayDb.get('SELECT value FROM system_settings WHERE key = "maintenance_mode"');
+    const result = await railwayDb.get('SELECT setting_value FROM system_settings WHERE setting_key = "maintenance_mode"');
     
-    const isMaintenanceMode = result ? result.value === 'true' : false;
+    const isMaintenanceMode = result ? result.setting_value === 'true' : false;
     res.json({ 
       success: true,
       maintenanceMode: isMaintenanceMode,
