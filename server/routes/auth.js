@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const { db } = require('../database/init');
+const railwayDb = require('../config/railway-db');
 const { authenticateToken } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
@@ -63,65 +63,50 @@ router.post('/register', [
     const { email, password, name, telegram } = req.body;
 
     // 檢查郵箱是否已存在
-    db.get('SELECT id FROM users WHERE email = ?', [email], async (err, row) => {
-      if (err) {
-        return res.status(500).json({ message: '資料庫錯誤' });
-      }
-      
-      if (row) {
-        return res.status(400).json({ message: '此郵箱已被註冊' });
-      }
+    const existingUser = await railwayDb.get('SELECT id FROM users WHERE email = ?', [email]);
+    
+    if (existingUser) {
+      return res.status(400).json({ message: '此郵箱已被註冊' });
+    }
 
-      // 加密密碼
-      const hashedPassword = await bcrypt.hash(password, 10);
+    // 加密密碼
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-      // 創建用戶
-      db.run(
-        'INSERT INTO users (email, password, name, telegram) VALUES (?, ?, ?, ?)',
-        [email, hashedPassword, name, telegram],
-        function(err) {
-          if (err) {
-            return res.status(500).json({ message: '創建用戶失敗' });
-          }
+    // 創建用戶
+    const result = await railwayDb.run(
+      'INSERT INTO users (email, password_hash, name, telegram) VALUES (?, ?, ?, ?)',
+      [email, hashedPassword, name, telegram]
+    );
 
-          // 獲取新創建的用戶
-          db.get('SELECT id, email, name, avatar, telegram, role, created_at FROM users WHERE id = ?', 
-            [this.lastID], async (err, user) => {
-            if (err) {
-              return res.status(500).json({ message: '獲取用戶資料失敗' });
-            }
+    // 獲取新創建的用戶
+    const user = await railwayDb.get('SELECT id, email, name, avatar, telegram, role, created_at FROM users WHERE id = ?', [result.lastID]);
 
-            // 生成 JWT token
-            const token = jwt.sign(
-              { userId: user.id, email: user.email, role: user.role },
-              process.env.JWT_SECRET || 'your-secret-key',
-              { expiresIn: '7d' }
-            );
+    // 生成 JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    );
 
-            // 發送歡迎郵件（非同步，不影響註冊流程）
-            try {
-              await sendWelcomeEmail(email, name);
-            } catch (emailError) {
-              console.error('發送歡迎郵件失敗:', emailError);
-              // 不影響註冊成功
-            }
+    // 發送歡迎郵件
+    try {
+      await sendWelcomeEmail(user.email, user.name);
+    } catch (emailError) {
+      console.error('發送歡迎郵件失敗:', emailError);
+    }
 
-            res.status(201).json({
-              message: '註冊成功',
-              user: {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                avatar: user.avatar,
-                telegram: user.telegram,
-                role: user.role,
-                created_at: user.created_at
-              },
-              token
-            });
-          });
-        }
-      );
+    res.status(201).json({
+      message: '註冊成功',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        telegram: user.telegram,
+        role: user.role,
+        created_at: user.created_at
+      },
+      token
     });
   } catch (error) {
     console.error('註冊錯誤:', error);
@@ -142,47 +127,43 @@ router.post('/login', [
 
     const { email, password } = req.body;
 
-    // 先查找用戶（不限制狀態）
-    db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
-      if (err) {
-        return res.status(500).json({ message: '資料庫錯誤' });
-      }
+    // 查找用戶
+    const user = await railwayDb.get('SELECT * FROM users WHERE email = ?', [email]);
 
-      if (!user) {
-        return res.status(401).json({ message: '郵箱或密碼錯誤' });
-      }
+    if (!user) {
+      return res.status(401).json({ message: '郵箱或密碼錯誤' });
+    }
 
-      // 檢查用戶狀態
-      if (user.status !== 'active') {
-        return res.status(403).json({ message: '帳戶已被封鎖' });
-      }
+    // 檢查用戶狀態
+    if (user.status !== 'active') {
+      return res.status(403).json({ message: '帳戶已被封鎖' });
+    }
 
-      // 驗證密碼
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      if (!isValidPassword) {
-        return res.status(401).json({ message: '郵箱或密碼錯誤' });
-      }
+    // 驗證密碼
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: '郵箱或密碼錯誤' });
+    }
 
-      // 生成 JWT token
-      const token = jwt.sign(
-        { userId: user.id, email: user.email, role: user.role },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '7d' }
-      );
+    // 生成 JWT token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    );
 
-      res.json({
-        message: '登入成功',
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatar: user.avatar,
-          telegram: user.telegram,
-          role: user.role,
-          created_at: user.created_at
-        },
-        token
-      });
+    res.json({
+      message: '登入成功',
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        telegram: user.telegram,
+        role: user.role,
+        created_at: user.created_at
+      },
+      token
     });
   } catch (error) {
     console.error('登入錯誤:', error);
@@ -191,19 +172,19 @@ router.post('/login', [
 });
 
 // 獲取當前用戶資料
-router.get('/me', authenticateToken, (req, res) => {
-  db.get('SELECT id, email, name, avatar, telegram, role, status, created_at FROM users WHERE id = ?', 
-    [req.user.userId], (err, user) => {
-    if (err) {
-      return res.status(500).json({ message: '資料庫錯誤' });
-    }
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const user = await railwayDb.get('SELECT id, email, name, avatar, telegram, role, status, created_at FROM users WHERE id = ?', [req.user.userId]);
 
     if (!user) {
       return res.status(404).json({ message: '用戶不存在' });
     }
 
     res.json({ user });
-  });
+  } catch (error) {
+    console.error('獲取用戶資料錯誤:', error);
+    res.status(500).json({ message: '伺服器錯誤' });
+  }
 });
 
 // 更新用戶資料
@@ -218,63 +199,50 @@ router.put('/profile', authenticateToken, upload.single('avatar'), [
     }
 
     const { name, telegram } = req.body;
-    const avatar = req.file ? `/uploads/avatars/${req.file.filename}` : null;
+    const updateData = {};
+    const params = [];
 
-    let updateFields = [];
-    let updateValues = [];
+    // 構建更新查詢
+    let query = 'UPDATE users SET updated_at = CURRENT_TIMESTAMP';
+    let paramIndex = 1;
 
     if (name) {
-      updateFields.push('name = ?');
-      updateValues.push(name);
+      query += ', name = ?';
+      params.push(name);
     }
 
-    if (telegram !== undefined) {
-      updateFields.push('telegram = ?');
-      updateValues.push(telegram);
+    if (telegram) {
+      query += ', telegram = ?';
+      params.push(telegram);
     }
 
-    if (avatar) {
-      updateFields.push('avatar = ?');
-      updateValues.push(avatar);
+    if (req.file) {
+      query += ', avatar = ?';
+      params.push(`/uploads/avatars/${req.file.filename}`);
     }
 
-    if (updateFields.length === 0) {
-      return res.status(400).json({ message: '沒有要更新的資料' });
-    }
+    query += ' WHERE id = ?';
+    params.push(req.user.userId);
 
-    updateFields.push('updated_at = CURRENT_TIMESTAMP');
-    updateValues.push(req.user.userId);
+    await railwayDb.run(query, params);
 
-    const query = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
+    // 獲取更新後的用戶資料
+    const user = await railwayDb.get('SELECT id, email, name, avatar, telegram, role, created_at FROM users WHERE id = ?', [req.user.userId]);
 
-    db.run(query, updateValues, function(err) {
-      if (err) {
-        return res.status(500).json({ message: '更新資料失敗' });
-      }
-
-      // 獲取更新後的用戶資料
-      db.get('SELECT id, email, name, avatar, telegram, role, status, created_at FROM users WHERE id = ?', 
-        [req.user.userId], (err, user) => {
-        if (err) {
-          return res.status(500).json({ message: '獲取用戶資料失敗' });
-        }
-
-        res.json({
-          message: '資料更新成功',
-          user
-        });
-      });
+    res.json({
+      message: '資料更新成功',
+      user
     });
   } catch (error) {
-    console.error('更新資料錯誤:', error);
+    console.error('更新用戶資料錯誤:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
 
-// 忘記密碼
+// 發送密碼重設郵件
 router.post('/forgot-password', [
   body('email').isEmail().normalizeEmail()
-], (req, res) => {
+], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -284,48 +252,27 @@ router.post('/forgot-password', [
     const { email } = req.body;
 
     // 檢查用戶是否存在
-    db.get('SELECT id, name, status FROM users WHERE email = ?', [email], async (err, user) => {
-      if (err) {
-        return res.status(500).json({ message: '資料庫錯誤' });
-      }
+    const user = await railwayDb.get('SELECT id, email, name FROM users WHERE email = ?', [email]);
 
-      if (!user) {
-        // 為了安全，即使用戶不存在也返回成功訊息
-        return res.json({ message: '如果郵箱存在，重設密碼連結已發送' });
-      }
+    if (!user) {
+      return res.status(404).json({ message: '找不到此郵箱對應的帳戶' });
+    }
 
-      // 檢查用戶狀態
-      if (user.status !== 'active') {
-        return res.status(403).json({ message: '帳戶已被封鎖，無法重設密碼' });
-      }
+    // 生成重設 token
+    const resetToken = generateResetToken(user.email);
 
-      // 生成重設密碼令牌
-      const resetToken = generateResetToken(user.id);
+    // 儲存重設 token
+    await railwayDb.run(
+      'INSERT OR REPLACE INTO password_reset_tokens (email, token, expires_at) VALUES (?, ?, datetime("now", "+1 hour"))',
+      [user.email, resetToken]
+    );
 
-      // 發送重設密碼郵件
-      try {
-        const emailResult = await sendPasswordResetEmail(email, user.name, resetToken);
-        
-        if (emailResult.success) {
-          res.json({ 
-            message: '重設密碼連結已發送到您的郵箱',
-            note: '請檢查您的郵箱並點擊連結重設密碼'
-          });
-        } else {
-          res.status(500).json({ 
-            message: '發送郵件失敗，請稍後再試或聯繫管理員',
-            error: emailResult.error
-          });
-        }
-      } catch (emailError) {
-        console.error('發送重設密碼郵件失敗:', emailError);
-        res.status(500).json({ 
-          message: '發送郵件失敗，請稍後再試或聯繫管理員'
-        });
-      }
-    });
+    // 發送重設郵件
+    await sendPasswordResetEmail(user.email, user.name, resetToken);
+
+    res.json({ message: '密碼重設郵件已發送' });
   } catch (error) {
-    console.error('忘記密碼錯誤:', error);
+    console.error('發送密碼重設郵件錯誤:', error);
     res.status(500).json({ message: '伺服器錯誤' });
   }
 });
@@ -343,30 +290,35 @@ router.post('/reset-password', [
 
     const { token, password } = req.body;
 
-    // 驗證令牌
-    const tokenValidation = validateResetToken(token);
-    if (!tokenValidation.valid) {
-      return res.status(400).json({ message: tokenValidation.message });
+    // 驗證 token
+    const isValidToken = validateResetToken(token);
+    if (!isValidToken) {
+      return res.status(400).json({ message: '無效或已過期的重設 token' });
+    }
+
+    // 查找 token 記錄
+    const tokenRecord = await railwayDb.get(
+      'SELECT email FROM password_reset_tokens WHERE token = ? AND expires_at > datetime("now") AND used = 0',
+      [token]
+    );
+
+    if (!tokenRecord) {
+      return res.status(400).json({ message: '無效或已過期的重設 token' });
     }
 
     // 加密新密碼
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 更新用戶密碼
-    db.run(
-      'UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [hashedPassword, tokenValidation.userId],
-      function(err) {
-        if (err) {
-          return res.status(500).json({ message: '更新密碼失敗' });
-        }
-
-        // 標記令牌為已使用
-        markTokenAsUsed(token);
-
-        res.json({ message: '密碼重設成功，請使用新密碼登入' });
-      }
+    // 更新密碼
+    await railwayDb.run(
+      'UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ?',
+      [hashedPassword, tokenRecord.email]
     );
+
+    // 標記 token 為已使用
+    await markTokenAsUsed(token);
+
+    res.json({ message: '密碼重設成功' });
   } catch (error) {
     console.error('重設密碼錯誤:', error);
     res.status(500).json({ message: '伺服器錯誤' });

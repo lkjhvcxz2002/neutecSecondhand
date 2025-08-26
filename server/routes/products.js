@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult, query } = require('express-validator');
-const { db } = require('../database/init');
+const railwayDb = require('../config/railway-db');
 const { authenticateToken, requireOwnerOrAdmin } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
