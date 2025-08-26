@@ -5,7 +5,13 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-// 所有管理員路由都需要管理員權限
+// 處理 OPTIONS 預檢請求（跳過認證）
+router.options('*', (req, res) => {
+  console.log(`🔄 管理員路由 OPTIONS 預檢請求: ${req.path}`);
+  res.status(200).end();
+});
+
+// 所有管理員路由都需要管理員權限（除了 OPTIONS）
 router.use(authenticateToken, requireAdmin);
 
 // 獲取所有用戶
