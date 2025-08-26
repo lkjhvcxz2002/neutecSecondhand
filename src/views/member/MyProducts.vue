@@ -31,7 +31,7 @@
         </div>
         <div class="card">
           <div class="text-center">
-            <div class="text-2xl font-bold text-gray-600">{{ getStatusCount(ProductStatus.Removed) }}</div>
+            <div class="text-2xl font-bold text-gray-600">{{ getStatusCount(ProductStatus.Inactive) }}</div>
             <div class="text-sm text-gray-600">已下架</div>
           </div>
         </div>

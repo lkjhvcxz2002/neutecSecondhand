@@ -72,7 +72,7 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                       <div class="flex items-center">
                         <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                          <img v-if="user.avatar" :src="user.avatar" alt="User Avatar" class="w-full h-full object-cover rounded-full"></img>
+                          <img v-if="user.avatar" :src="getAvatarUrl(user.avatar)" alt="User Avatar" class="w-full h-full object-cover rounded-full"></img>
                           <Icon v-else name="user" class="w-full h-full object-cover rounded-full"></Icon>
                         </div>
                         <div class="ml-4">
@@ -177,6 +177,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useAdminStore } from '@/stores/admin'
 import Icon from '@/components/Icon.vue'
 import { ProductStatus } from '@/ts/index.enums'
+import { getAvatarUrl } from '@/utils/imageUrl'
 
 const authStore = useAuthStore()
 const adminStore = useAdminStore()
