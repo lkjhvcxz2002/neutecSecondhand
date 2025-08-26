@@ -325,7 +325,8 @@ const handleRegister = async () => {
     name: form.value.name.trim(),
     email: form.value.email.trim(),
     password: form.value.password,
-    telegram: form.value.telegram.trim()
+    telegram: form.value.telegram.trim(),
+    username: form.value.name.trim()
   }
   
   const result = await authStore.register(userData)

@@ -52,6 +52,7 @@ router.post('/register', [
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 6 }),
   body('name').trim().isLength({ min: 2 }),
+  body('username').optional().trim().isLength({ min: 3, max: 20 }).matches(/^[a-zA-Z0-9_]+$/).withMessage('用戶名只能包含字母、數字和下劃線，長度3-20位'),
   body('telegram').optional().trim()
 ], async (req, res) => {
   try {
@@ -60,7 +61,7 @@ router.post('/register', [
       return res.status(400).json({ message: '輸入資料驗證失敗', errors: errors.array() });
     }
 
-    const { email, password, name, telegram } = req.body;
+    const { email, password, name, telegram, username } = req.body;
 
     // 檢查郵箱是否已存在
     const existingUser = await railwayDb.get('SELECT id FROM users WHERE email = ?', [email]);
@@ -72,10 +73,18 @@ router.post('/register', [
     // 加密密碼
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 檢查用戶名是否已存在
+    if (username) {
+      const existingUsername = await railwayDb.get('SELECT id FROM users WHERE username = ?', [username]);
+      if (existingUsername) {
+        return res.status(400).json({ message: '此用戶名已被使用' });
+      }
+    }
+
     // 創建用戶
     const result = await railwayDb.run(
-      'INSERT INTO users (email, password_hash, name, telegram) VALUES (?, ?, ?, ?)',
-      [email, hashedPassword, name, telegram]
+      'INSERT INTO users (username, email, password_hash, name, telegram) VALUES (?, ?, ?, ?, ?)',
+      [username || email, email, hashedPassword, name, telegram]
     );
 
     // 獲取新創建的用戶
