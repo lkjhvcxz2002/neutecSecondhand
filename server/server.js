@@ -14,6 +14,9 @@ const {
   getDatabaseConfig
 } = require('./config/env');
 
+// 載入 Railway 服務
+const railwayVolume = require('./config/railway-volume');
+
 // 載入環境變數
 loadEnvironmentConfig();
 
@@ -173,12 +176,27 @@ app.use('/api/maintenance', maintenanceRoutes);
 
 // 健康檢查
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: '二手交換平台API運行中',
-    environment: serverConfig.env,
-    timestamp: new Date().toISOString()
-  });
+  try {
+    res.json({ 
+      status: 'OK', 
+      message: '二手交換平台API運行中',
+      environment: serverConfig.env,
+      timestamp: new Date().toISOString(),
+      storage: {
+        type: railwayVolume.getStorageType(),
+        databasePath: railwayVolume.getDatabasePath(),
+        uploadPath: railwayVolume.getUploadPath(),
+        isRailway: railwayVolume.isRailway()
+      }
+    });
+  } catch (error) {
+    console.error('健康檢查失敗:', error);
+    res.status(500).json({ 
+      status: 'ERROR',
+      message: '健康檢查失敗',
+      error: error.message
+    });
+  }
 });
 
 // 錯誤處理中間件

@@ -95,9 +95,22 @@ const getDatabaseConfig = () => {
                     process.env.RAILWAY_PROJECT_ID || 
                     process.env.RAILWAY_SERVICE_NAME;
   
+  // 在 Railway 環境中使用 SQLite 和 Volume 存儲
+  if (isRailway) {
+    console.log('🚂 檢測到 Railway 環境，使用 SQLite 和 Volume 存儲')
+    return {
+      type: 'sqlite', // 使用 SQLite 而不是 PostgreSQL
+      path: '/data/database.db', // 使用 Railway Volume 路徑
+      uploadPath: '/data/uploads', // 使用 Railway Volume
+      maxFileSize: parseInt(getConfig('MAX_FILE_SIZE', 5242880))
+    };
+  }
+  
+  // 本地開發環境
   return {
-    path: isRailway ? ':memory:' : getConfig('DB_PATH', './database/secondhand.db'),
-    uploadPath: isRailway ? '/tmp/uploads' : getConfig('UPLOAD_PATH', './uploads'),
+    type: getConfig('DB_TYPE', 'sqlite'), // 本地可選擇 SQLite 或 PostgreSQL
+    path: getConfig('DB_PATH', './database/secondhand.db'),
+    uploadPath: getConfig('UPLOAD_PATH', './uploads'),
     maxFileSize: parseInt(getConfig('MAX_FILE_SIZE', 5242880))
   };
 };
