@@ -38,8 +38,8 @@ function requireOwnerOrAdmin(req, res, next) {
   }
 
   // 檢查商品是否屬於當前用戶
-  const { db } = require('../database/init');
-  db.get('SELECT user_id FROM products WHERE id = ?', [productId], (err, product) => {
+  const railwayDb = require('../config/railway-db');
+  railwayDb.get('SELECT user_id FROM products WHERE id = ?', [productId], (err, product) => {
     if (err) {
       return res.status(500).json({ message: '資料庫錯誤' });
     }
