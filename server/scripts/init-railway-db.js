@@ -109,7 +109,7 @@ async function initRailwayDatabase() {
               price REAL,
               category TEXT NOT NULL,
               trade_type TEXT NOT NULL,
-              status TEXT DEFAULT 'active' CHECK (status IN ('active', 'sold', 'expired', 'removed', 'processing')),
+              status TEXT DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'sold', 'removed', 'processing')),
               images TEXT,
               created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
               updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
