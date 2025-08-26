@@ -29,20 +29,20 @@
     <div class="grid md:grid-cols-3 gap-8 mb-16">
       <div class="bg-white rounded-lg p-6 text-center border border-gray-100">
         <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Icon name="shopping-cart" class="w-8 h-8" color="primary" />
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">快速交易</h3>
+        <p class="text-gray-600">透過Telegram直接聯繫賣家，無須註冊即可快速購買商品</p>
+      </div>
+      
+      <div class="bg-white rounded-lg p-6 text-center border border-gray-100">
+        <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
           </svg>
         </div>
         <h3 class="text-xl font-semibold text-gray-900 mb-2">輕鬆上架</h3>
         <p class="text-gray-600">簡單幾步即可上架您的二手物品 (需註冊)，支援多張圖片上傳</p>
-      </div>
-      
-      <div class="bg-white rounded-lg p-6 text-center border border-gray-100">
-        <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Icon name="shopping-cart" class="w-8 h-8" color="primary" />
-        </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">快速交易</h3>
-        <p class="text-gray-600">透過Telegram直接聯繫賣家，無須註冊即可快速購買商品</p>
       </div>
       
       <div class="bg-white rounded-lg p-6 text-center border border-gray-100">

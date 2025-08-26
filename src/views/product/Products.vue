@@ -36,8 +36,8 @@
           />
         </div>
         
-                 <!-- 分類和狀態選擇器 -->
-         <div class="form-row">
+        <div class="form-row">
+           <!-- 分類選擇器 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">分類</label>
             <select v-model="selectedCategory" class="input-field">
@@ -45,12 +45,22 @@
               <option v-for="category in ProductCategory" :key="category" :value="category">{{ category }}</option>
             </select>
           </div>
-          
+
+          <!-- 狀態選擇器 -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">狀態</label>
             <select v-model="selectedStatus" class="input-field">
               <option value="">全部狀態</option>
               <option v-for="status in availableProductStatus" :key="status" :value="status">{{ getProductStatusText(status) }}</option>
+            </select>
+          </div>
+
+          <!-- 交易類型選擇器 -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">交易類型</label>
+            <select v-model="selectedTradeType" class="input-field">
+              <option value="">全部交易類型</option>
+              <option v-for="tradeType in TradeType" :key="tradeType" :value="tradeType">{{ getTradeTypeText(tradeType) }}</option>
             </select>
           </div>
         </div>
@@ -87,6 +97,13 @@
            >
              狀態: {{ getProductStatusText(selectedStatus) }}
              <button @click="selectedCategory = ''" class="filter-tag-remove text-purple-600">×</button>
+           </span>
+           <span 
+             v-if="selectedTradeType" 
+             class="filter-tag filter-tag-red"
+           >
+             交易類型: {{ getTradeTypeText(selectedTradeType) }}
+             <button @click="selectedTradeType = ''" class="filter-tag-remove text-red-600">×</button>
            </span>
         </div>
       </div>
@@ -185,6 +202,7 @@ const getProductStatusText = (status) => {
 const searchQuery = ref('')
 const selectedCategory = ref('')
 const selectedStatus = ref('')
+const selectedTradeType = ref('')
 const showFilters = ref(false) // 控制篩選器顯示/隱藏
 const availableProductStatus = ref([ProductStatus.Active, ProductStatus.Processing])
 
@@ -197,6 +215,7 @@ const clearFilters = () => {
   searchQuery.value = ''
   selectedCategory.value = ''
   selectedStatus.value = ''
+  selectedTradeType.value = ''
 }
 
 // 切換篩選器顯示/隱藏
@@ -206,7 +225,7 @@ const toggleFilters = () => {
 
 // 檢查是否有活躍的篩選條件
 const hasActiveFilters = computed(() => {
-  return searchQuery.value || selectedCategory.value || selectedStatus.value
+  return searchQuery.value || selectedCategory.value || selectedStatus.value || selectedTradeType.value
 })
 
 
@@ -215,12 +234,12 @@ onMounted(async () => {
 })
 
 // 監聽篩選條件變化
-watch([searchQuery, selectedCategory, selectedStatus], () => {
-  // 這裡可以觸發新的搜尋請求，但目前沒有實作 
+watch([searchQuery, selectedCategory, selectedStatus, selectedTradeType], () => {
   productsStore.setFilters({
     search: searchQuery.value,
     category: selectedCategory.value,
-    status: selectedStatus.value
+    status: selectedStatus.value,
+    tradeType: selectedTradeType.value
   })
 })
 </script>

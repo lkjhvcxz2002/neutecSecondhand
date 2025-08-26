@@ -14,6 +14,7 @@ export const useProductsStore = defineStore('products', () => {
     category: '',
     status: '',
     search: '',
+    tradeType: '',
     priceRange: { min: 0, max: 999999 }
   })
 
@@ -35,6 +36,10 @@ export const useProductsStore = defineStore('products', () => {
         p.title.toLowerCase().includes(search) ||
         p.description.toLowerCase().includes(search)
       )
+    }
+    
+    if (filters.value.tradeType) {
+      filtered = filtered.filter(p => p.tradeType === filters.value.tradeType)
     }
     
     if (filters.value.priceRange.min > 0 || filters.value.priceRange.max < 999999) {
@@ -206,6 +211,7 @@ export const useProductsStore = defineStore('products', () => {
       category: '',
       status: '',
       search: '',
+      tradeType: '',
       priceRange: { min: 0, max: 999999 }
     }
   }
