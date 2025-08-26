@@ -39,7 +39,7 @@ export const useProductsStore = defineStore('products', () => {
     }
     
     if (filters.value.tradeType) {
-      filtered = filtered.filter(p => p.tradeType === filters.value.tradeType)
+      filtered = filtered.filter(p => p.trade_type === filters.value.tradeType)
     }
     
     if (filters.value.priceRange.min > 0 || filters.value.priceRange.max < 999999) {
