@@ -459,7 +459,7 @@ router.patch('/:id/status', authenticateToken, requireOwnerOrAdmin, [
 
     railwayDb.run(query, [status, id], function(err) {
       if (err) {
-        return res.status(500).json({ message: '更新狀態失敗' });
+        return res.status(500).json({ message: '更新狀態失敗' + JSON.stringify(err) });
       }
 
       // 獲取更新後的商品
