@@ -55,7 +55,7 @@ export const classes = {
   status: {
     active: 'text-green-600',
     sold: 'text-red-600',
-    inactive: 'text-gray-600'
+    removed: 'text-gray-600'
   }
 }
 

@@ -17,7 +17,7 @@ export enum ProductStatus {
   Active = 'active',
   Processing = 'processing',
   Sold = 'sold',
-  Inactive = 'inactive',
+  Inactive = 'removed',
 }
 
 export enum UserStatus {

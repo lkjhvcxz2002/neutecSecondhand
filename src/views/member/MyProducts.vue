@@ -13,25 +13,25 @@
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="card">
           <div class="text-center">
-            <div class="text-2xl font-bold text-blue-600">{{ getStatusCount('active') }}</div>
+            <div class="text-2xl font-bold text-blue-600">{{ getStatusCount(ProductStatus.Active) }}</div>
             <div class="text-sm text-gray-600">上架中</div>
           </div>
         </div>
         <div class="card">
           <div class="text-center">
-            <div class="text-2xl font-bold text-yellow-600">{{ getStatusCount('processing') }}</div>
+            <div class="text-2xl font-bold text-yellow-600">{{ getStatusCount(ProductStatus.Processing) }}</div>
             <div class="text-sm text-gray-600">交易中</div>
           </div>
         </div>
         <div class="card">
           <div class="text-center">
-            <div class="text-2xl font-bold text-red-600">{{ getStatusCount('sold') }}</div>
+            <div class="text-2xl font-bold text-red-600">{{ getStatusCount(ProductStatus.Sold) }}</div>
             <div class="text-sm text-gray-600">已售出</div>
           </div>
         </div>
         <div class="card">
           <div class="text-center">
-            <div class="text-2xl font-bold text-gray-600">{{ getStatusCount('inactive') }}</div>
+            <div class="text-2xl font-bold text-gray-600">{{ getStatusCount(ProductStatus.Removed) }}</div>
             <div class="text-sm text-gray-600">已下架</div>
           </div>
         </div>
@@ -275,7 +275,7 @@ const toggleProductStatus = (product) => {
 const confirmStatusChange = async () => {
   if (!selectedProduct.value) return
   
-  const newStatus = selectedProduct.value.status === 'active' ? 'inactive' : 'active'
+  const newStatus = selectedProduct.value.status === ProductStatus.Active ? ProductStatus.Inactive : ProductStatus.Active
   const result = await productsStore.updateProductStatus(selectedProduct.value.id, newStatus)
   
   if (result.success) {

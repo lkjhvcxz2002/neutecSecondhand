@@ -169,7 +169,7 @@ router.patch('/users/:id/role', [
 router.get('/products', [
   query('page').optional().isInt({ min: 1 }),
   query('limit').optional().isInt({ min: 1, max: 100 }),
-  query('status').optional().isIn(['active', 'sold', 'inactive']),
+  query('status').optional().isIn(['active', 'sold', 'expired', 'removed']),
   query('category').optional().trim(),
   query('search').optional().trim()
 ], (req, res) => {
@@ -272,7 +272,7 @@ router.get('/products', [
 
 // 管理員下架商品
 router.patch('/products/:id/status', [
-  body('status').isIn(['active', 'inactive'])
+  body('status').isIn(['active', 'expired', 'removed'])
 ], (req, res) => {
   try {
     const errors = validationResult(req);

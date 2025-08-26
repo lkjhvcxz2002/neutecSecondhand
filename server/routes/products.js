@@ -45,7 +45,7 @@ router.get('/', [
   query('page').optional().isInt({ min: 1 }),
   query('limit').optional().isInt({ min: 1, max: 100 }),
   query('category').optional().trim(),
-  query('status').optional().isIn(['active', 'sold', 'inactive']),
+  query('status').optional().isIn(['active', 'sold', 'expired', 'removed']),
   query('search').optional().trim(),
   query('minPrice').optional().isInt({ min: 0 }),
   query('maxPrice').optional().isInt({ min: 0 }),
@@ -444,7 +444,7 @@ router.put('/:id', authenticateToken, requireOwnerOrAdmin, upload.array('images'
 
 // 更新商品狀態
 router.patch('/:id/status', authenticateToken, requireOwnerOrAdmin, [
-  body('status').isIn(['active', 'processing', 'sold', 'inactive'])
+  body('status').isIn(['active', 'processing', 'sold', 'expired', 'removed'])
 ], (req, res) => {
   try {
     const errors = validationResult(req);
