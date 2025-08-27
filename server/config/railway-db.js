@@ -5,6 +5,7 @@ class RailwayDatabase {
   constructor() {
     this.db = null;
     this.dbPath = railwayVolume.getDatabasePath();
+    this.initialized = false;
     this.init();
   }
 
@@ -15,19 +16,44 @@ class RailwayDatabase {
       this.db = new sqlite3.Database(this.dbPath, (err) => {
         if (err) {
           console.error('❌ SQLite 資料庫連接失敗:', err.message);
+          this.initialized = false;
         } else {
           console.log('✅ SQLite 資料庫連接成功');
+          
+          // 啟用外鍵約束
+          this.db.run('PRAGMA foreign_keys = ON', (err) => {
+            if (err) {
+              console.error('❌ 啟用外鍵約束失敗:', err.message);
+            } else {
+              console.log('✅ 外鍵約束已啟用');
+            }
+          });
+          
+          // 設置 WAL 模式以提高性能
+          this.db.run('PRAGMA journal_mode = WAL', (err) => {
+            if (err) {
+              console.error('❌ 設置 WAL 模式失敗:', err.message);
+            } else {
+              console.log('✅ WAL 模式已設置');
+            }
+          });
+          
+          // 設置同步模式
+          this.db.run('PRAGMA synchronous = NORMAL', (err) => {
+            if (err) {
+              console.error('❌ 設置同步模式失敗:', err.message);
+            } else {
+              console.log('✅ 同步模式已設置');
+            }
+          });
+          
+          this.initialized = true;
         }
       });
-
-      // 啟用外鍵約束
-      this.db.run('PRAGMA foreign_keys = ON');
-      
-      // 設置 WAL 模式以提高性能
-      this.db.run('PRAGMA journal_mode = WAL');
       
     } catch (error) {
       console.error('❌ SQLite 初始化失敗:', error);
+      this.initialized = false;
     }
   }
 
@@ -96,7 +122,7 @@ class RailwayDatabase {
 
   // 檢查資料庫是否已連接
   isConnected() {
-    return this.db !== null;
+    return this.db !== null && this.initialized;
   }
 
   // 獲取存儲類型

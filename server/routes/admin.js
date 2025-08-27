@@ -314,37 +314,62 @@ router.patch('/products/:id/status', [
 router.get('/stats', async (req, res) => {
   try {
     console.log('📊 開始獲取系統統計資料...');
+    
+    // 檢查資料庫連接
+    if (!railwayDb.isConnected()) {
+      console.error('❌ 資料庫未連接');
+      return res.status(500).json({ message: '資料庫連接失敗' });
+    }
 
-    // 使用 Promise 包裝 railwayDb 查詢
-    const getUserStats = () => new Promise((resolve, reject) => {
-      railwayDb.get('SELECT COUNT(*) as total_users FROM users', (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
+    console.log('✅ 資料庫連接正常，開始執行查詢...');
+
+    // 使用 Promise 包裝 railwayDb 查詢，添加超時處理
+    const executeQuery = (queryFunc, queryName) => {
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error(`${queryName} 查詢超時`));
+        }, 10000); // 10秒超時
+        
+        try {
+          queryFunc((err, result) => {
+            clearTimeout(timeout);
+            if (err) {
+              console.error(`❌ ${queryName} 查詢失敗:`, err);
+              reject(err);
+            } else {
+              console.log(`✅ ${queryName} 查詢成功:`, result);
+              resolve(result);
+            }
+          });
+        } catch (error) {
+          clearTimeout(timeout);
+          console.error(`❌ ${queryName} 查詢異常:`, error);
+          reject(error);
+        }
       });
-    });
+    };
 
-    const getProductStats = () => new Promise((resolve, reject) => {
-      railwayDb.get('SELECT COUNT(*) as total_products FROM products', (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
+    const getUserStats = () => executeQuery(
+      (callback) => railwayDb.get('SELECT COUNT(*) as total_users FROM users', callback),
+      '用戶統計'
+    );
 
-    const getActiveProductStats = () => new Promise((resolve, reject) => {
-      railwayDb.get('SELECT COUNT(*) as active_products FROM products WHERE status = "active"', (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
+    const getProductStats = () => executeQuery(
+      (callback) => railwayDb.get('SELECT COUNT(*) as total_products FROM products', callback),
+      '商品統計'
+    );
 
-    const getCategoryStats = () => new Promise((resolve, reject) => {
-      railwayDb.all('SELECT category, COUNT(*) as count FROM products GROUP BY category', (err, result) => {
-        if (err) reject(err);
-        else resolve(result);
-      });
-    });
+    const getActiveProductStats = () => executeQuery(
+      (callback) => railwayDb.get('SELECT COUNT(*) as active_products FROM products WHERE status = "active"', callback),
+      '活躍商品統計'
+    );
 
-    console.log('🚀 準備執行所有查詢...')
+    const getCategoryStats = () => executeQuery(
+      (callback) => railwayDb.all('SELECT category, COUNT(*) as count FROM products GROUP BY category', callback),
+      '分類統計'
+    );
+
+    console.log('🚀 準備執行所有查詢...');
 
     // 並行執行所有查詢
     const [userStats, productStats, activeStats, categoryStats] = await Promise.all([
@@ -353,8 +378,9 @@ router.get('/stats', async (req, res) => {
       getActiveProductStats(),
       getCategoryStats()
     ]);
-    console.log('🚀 所有查詢完成...')
-    console.log('✅ 統計資料查詢完成:', {
+
+    console.log('✅ 所有查詢完成');
+    console.log('📊 統計資料查詢完成:', {
       users: userStats.total_users,
       products: productStats.total_products,
       active: activeStats.active_products,
@@ -372,6 +398,22 @@ router.get('/stats', async (req, res) => {
 
   } catch (error) {
     console.error('❌ 獲取統計資料錯誤:', error);
+    
+    // 根據錯誤類型返回不同的錯誤訊息
+    if (error.message.includes('超時')) {
+      return res.status(408).json({ 
+        message: '查詢超時，請稍後再試',
+        error: error.message 
+      });
+    }
+    
+    if (error.message.includes('資料庫')) {
+      return res.status(500).json({ 
+        message: '資料庫錯誤，請檢查資料庫連接',
+        error: error.message 
+      });
+    }
+    
     res.status(500).json({ 
       message: '獲取統計資料失敗',
       error: error.message 
