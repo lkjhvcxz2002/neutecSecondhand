@@ -421,6 +421,84 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// 緊急統計 API - 簡化版本，避免複雜查詢
+router.get('/stats/simple', async (req, res) => {
+  try {
+    console.log('🚨 使用緊急簡化統計 API...');
+    
+    // 檢查資料庫連接
+    if (!railwayDb.isConnected()) {
+      console.error('❌ 資料庫未連接');
+      return res.status(500).json({ message: '資料庫連接失敗' });
+    }
+
+    // 只執行最基本的查詢
+    let userCount = 0;
+    let productCount = 0;
+    
+    try {
+      // 用戶數量 - 使用 LIMIT 1 避免全表掃描
+      const userResult = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('用戶統計查詢超時'));
+        }, 5000);
+        
+        railwayDb.get('SELECT COUNT(*) as count FROM users LIMIT 1', (err, result) => {
+          clearTimeout(timeout);
+          if (err) reject(err);
+          else resolve(result);
+        });
+      });
+      userCount = userResult.count;
+      console.log('✅ 用戶統計查詢成功:', userCount);
+      
+    } catch (error) {
+      console.error('❌ 用戶統計查詢失敗:', error);
+      userCount = -1; // 標記為錯誤
+    }
+    
+    try {
+      // 商品數量 - 使用 LIMIT 1 避免全表掃描
+      const productResult = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('商品統計查詢超時'));
+        }, 5000);
+        
+        railwayDb.get('SELECT COUNT(*) as count FROM products LIMIT 1', (err, result) => {
+          clearTimeout(timeout);
+          if (err) reject(err);
+          else resolve(result);
+        });
+      });
+      productCount = productResult.count;
+      console.log('✅ 商品統計查詢成功:', productCount);
+      
+    } catch (error) {
+      console.error('❌ 商品統計查詢失敗:', error);
+      productCount = -1; // 標記為錯誤
+    }
+
+    // 返回簡化結果
+    const stats = {
+      totalUsers: userCount >= 0 ? userCount : '查詢失敗',
+      totalProducts: productCount >= 0 ? productCount : '查詢失敗',
+      activeProducts: '簡化模式',
+      categoryBreakdown: [],
+      mode: 'emergency_simple'
+    };
+
+    console.log('📊 簡化統計完成:', stats);
+    res.json({ stats });
+
+  } catch (error) {
+    console.error('❌ 簡化統計 API 錯誤:', error);
+    res.status(500).json({ 
+      message: '簡化統計失敗',
+      error: error.message 
+    });
+  }
+});
+
 // 獲取系統設定
 router.get('/settings', (req, res) => {
   try {
