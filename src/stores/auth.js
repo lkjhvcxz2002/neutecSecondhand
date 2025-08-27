@@ -50,7 +50,13 @@ export const useAuthStore = defineStore('auth', () => {
   const register = async (userData) => {
     try {
       loading.value = true
-      const response = await axios.post('/api/auth/register', userData)
+      console.log('🚀 開始註冊請求...')
+      
+      const response = await axios.post('/api/auth/register', userData, {
+        timeout: 15000 // 15秒超時
+      })
+      
+      console.log('✅ 註冊成功:', response.data)
       
       const { user: newUser, token: tokenData } = response.data
       user.value = newUser
@@ -61,9 +67,32 @@ export const useAuthStore = defineStore('auth', () => {
       
       return { success: true }
     } catch (error) {
+      console.error('❌ 註冊失敗:', error)
+      
+      if (error.code === 'ECONNABORTED') {
+        return { 
+          success: false, 
+          message: '註冊請求超時，請檢查網路連線' 
+        }
+      }
+      
+      if (error.response) {
+        return { 
+          success: false, 
+          message: error.response.data?.message || '註冊失敗' 
+        }
+      }
+      
+      if (error.request) {
+        return { 
+          success: false, 
+          message: '無法連接到伺服器，請檢查網路連線' 
+        }
+      }
+      
       return { 
         success: false, 
-        message: error.response?.data?.message || '註冊失敗' 
+        message: '註冊失敗：' + (error.message || '未知錯誤') 
       }
     } finally {
       loading.value = false

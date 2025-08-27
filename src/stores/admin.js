@@ -12,14 +12,42 @@ const loading = ref(false)
 const fetchStats = async () => {
   try {
     loading.value = true
-    const response = await axios.get('/api/admin/stats')
+    console.log('🚀 開始獲取統計資料...')
+    
+    const response = await axios.get('/api/admin/stats', {
+      timeout: 15000 // 15秒超時
+    })
+    
+    console.log('✅ 統計資料獲取成功:', response.data)
     stats.value = response.data.stats
     return { success: true, data: response.data.stats }
   } catch (error) {
-    console.error('獲取統計資料失敗:', error)
+    console.error('❌ 獲取統計資料失敗:', error)
+    
+    if (error.code === 'ECONNABORTED') {
+      return { 
+        success: false, 
+        message: '請求超時，請檢查網路連線' 
+      }
+    }
+    
+    if (error.response) {
+      return { 
+        success: false, 
+        message: error.response.data?.message || '獲取統計資料失敗' 
+      }
+    }
+    
+    if (error.request) {
+      return { 
+        success: false, 
+        message: '無法連接到伺服器，請檢查網路連線' 
+      }
+    }
+    
     return { 
       success: false, 
-      message: error.response?.data?.message || '獲取統計資料失敗' 
+      message: '獲取統計資料失敗：' + (error.message || '未知錯誤') 
     }
   } finally {
     loading.value = false

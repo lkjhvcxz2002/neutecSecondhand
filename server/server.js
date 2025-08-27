@@ -84,6 +84,19 @@ app.use(cors(corsOptions));
 // 處理 OPTIONS 預檢請求
 app.options('*', cors(corsOptions));
 
+// 請求超時中間件
+app.use((req, res, next) => {
+  // 設定請求超時為 15 秒（比 axios 超時短）
+  req.setTimeout(15000, () => {
+    console.error('⏰ 請求超時:', req.method, req.path);
+    if (!res.headersSent) {
+      res.status(408).json({ message: '請求超時' });
+    }
+  });
+  
+  next();
+});
+
 // 添加 CORS 調試日誌
 app.use((req, res, next) => {
   if (req.method === 'OPTIONS') {
@@ -201,10 +214,34 @@ app.get('/api/health', (req, res) => {
 
 // 錯誤處理中間件
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('❌ 伺服器錯誤:', {
+    method: req.method,
+    path: req.path,
+    error: err.message,
+    stack: err.stack,
+    timestamp: new Date().toISOString()
+  });
+  
+  // 如果是 CORS 錯誤
+  if (err.message === '不允許的來源') {
+    return res.status(403).json({ 
+      message: 'CORS 錯誤：不允許的來源',
+      origin: req.headers.origin,
+      allowedOrigins: corsOptions.origin.toString()
+    });
+  }
+  
+  // 如果是超時錯誤
+  if (err.code === 'ECONNABORTED') {
+    return res.status(408).json({ 
+      message: '請求超時',
+      path: req.path
+    });
+  }
+  
   res.status(500).json({ 
     message: '伺服器內部錯誤',
-    error: serverConfig.env === 'development' ? err.message : {}
+    error: process.env.NODE_ENV === 'development' ? err.message : '請稍後再試'
   });
 });
 
