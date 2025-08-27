@@ -344,6 +344,8 @@ router.get('/stats', async (req, res) => {
       });
     });
 
+    console.log('🚀 準備執行所有查詢...')
+
     // 並行執行所有查詢
     const [userStats, productStats, activeStats, categoryStats] = await Promise.all([
       getUserStats(),
@@ -351,7 +353,7 @@ router.get('/stats', async (req, res) => {
       getActiveProductStats(),
       getCategoryStats()
     ]);
-
+    console.log('🚀 所有查詢完成...')
     console.log('✅ 統計資料查詢完成:', {
       users: userStats.total_users,
       products: productStats.total_products,

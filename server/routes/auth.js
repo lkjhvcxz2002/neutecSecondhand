@@ -107,7 +107,7 @@ router.post('/register', [
     // 發送歡迎郵件
     console.log('🚀 發送歡迎郵件...') 
     try {
-      await sendWelcomeEmail(user.email, user.name);
+      sendWelcomeEmail(user.email, user.name);
     } catch (emailError) {
       console.error('發送歡迎郵件失敗:', emailError);
     }
