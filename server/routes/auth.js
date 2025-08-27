@@ -306,39 +306,93 @@ router.post('/reset-password', [
     }
 
     const { token, password } = req.body;
+    console.log('🚀 開始處理密碼重設請求');
 
-    // 驗證 token
-    const isValidToken = validateResetToken(token);
-    if (!isValidToken) {
-      return res.status(400).json({ message: '無效或已過期的重設 token' });
+    // 檢查 password_reset_tokens 表是否存在
+    console.log('🔍 檢查 password_reset_tokens 表...');
+    try {
+      const tableExists = await railwayDb.get(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='password_reset_tokens'"
+      );
+      
+      if (!tableExists) {
+        console.log('❌ password_reset_tokens 表不存在');
+        return res.status(500).json({ 
+          message: '系統暫時無法處理密碼重設，請稍後再試',
+          error: '資料庫表缺失'
+        });
+      }
+      console.log('✅ password_reset_tokens 表存在');
+    } catch (error) {
+      console.error('❌ 檢查表失敗:', error);
+      return res.status(500).json({ message: '資料庫檢查失敗' });
     }
 
+    // 驗證 token
+    console.log('🔑 驗證重設 token...');
+    const isValidToken = validateResetToken(token);
+    if (!isValidToken) {
+      console.log('❌ token 驗證失敗');
+      return res.status(400).json({ message: '無效或已過期的重設 token' });
+    }
+    console.log('✅ token 驗證成功');
+
     // 查找 token 記錄
+    console.log('🔍 查找 token 記錄...');
     const tokenRecord = await railwayDb.get(
       'SELECT email FROM password_reset_tokens WHERE token = ? AND expires_at > datetime("now") AND used = 0',
       [token]
     );
 
     if (!tokenRecord) {
+      console.log('❌ token 記錄不存在或已過期');
       return res.status(400).json({ message: '無效或已過期的重設 token' });
     }
+    console.log('✅ token 記錄找到:', tokenRecord.email);
 
     // 加密新密碼
+    console.log('🔐 加密新密碼...');
     const hashedPassword = await bcrypt.hash(password, 10);
+    console.log('✅ 密碼加密完成');
 
     // 更新密碼
-    await railwayDb.run(
-      'UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ?',
-      [hashedPassword, tokenRecord.email]
-    );
+    console.log('💾 更新用戶密碼...');
+    try {
+      await railwayDb.run(
+        'UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE email = ?',
+        [hashedPassword, tokenRecord.email]
+      );
+      console.log('✅ 用戶密碼更新成功');
+    } catch (error) {
+      console.error('❌ 更新用戶密碼失敗:', error);
+      return res.status(500).json({ message: '密碼更新失敗' });
+    }
 
     // 標記 token 為已使用
-    await markTokenAsUsed(token);
+    console.log('🏷️ 標記 token 為已使用...');
+    try {
+      await markTokenAsUsed(token);
+      console.log('✅ token 標記成功');
+    } catch (error) {
+      console.error('❌ 標記 token 失敗:', error);
+      // 即使標記失敗，密碼已經更新，所以不影響主要功能
+      console.log('⚠️ token 標記失敗，但密碼已更新');
+    }
 
+    console.log('🎉 密碼重設完成');
     res.json({ message: '密碼重設成功' });
+    
   } catch (error) {
-    console.error('重設密碼錯誤:', error);
-    res.status(500).json({ message: '伺服器錯誤' });
+    console.error('❌ 重設密碼錯誤:', error);
+    
+    if (error.message.includes('no such table')) {
+      return res.status(500).json({ 
+        message: '系統暫時無法處理密碼重設，請稍後再試',
+        error: '資料庫表缺失'
+      });
+    }
+    
+    res.status(500).json({ message: '伺服器錯誤，請稍後再試' });
   }
 });
 

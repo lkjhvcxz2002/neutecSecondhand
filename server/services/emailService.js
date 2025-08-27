@@ -95,7 +95,8 @@ const createTransporter = () => {
     service: process.env.EMAIL_SERVICE || 'gmail',
     host: config.host || config.service,
     port: config.port,
-    user: config.auth.user
+    user: config.auth.user,
+    pass: config.auth.pass
   });
   
   return nodemailer.createTransport(config);
@@ -106,6 +107,7 @@ const transporter = createTransporter();
 // 驗證郵件配置
 const verifyEmailConfig = async () => {
   try {
+    console.log('🚀 開始驗證郵件配置...')
     await transporter.verify();
     console.log('✅ 郵件服務配置驗證成功');
     return true;

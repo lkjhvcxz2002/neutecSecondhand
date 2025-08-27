@@ -23,7 +23,7 @@ axios.defaults.retryDelay = 1000 // 重試延遲
 // 請求攔截器
 axios.interceptors.request.use(
   (config) => {
-    console.log(`🚀 發送請求: ${config.method?.toUpperCase()} ${config.url}`)
+    // console.log(`🚀 發送請求: ${config.method?.toUpperCase()} ${config.url}`)
     return config
   },
   (error) => {
@@ -35,7 +35,7 @@ axios.interceptors.request.use(
 // 回應攔截器
 axios.interceptors.response.use(
   (response) => {
-    console.log(`✅ 請求成功: ${response.config.method?.toUpperCase()} ${response.config.url}`)
+    // console.log(`✅ 請求成功: ${response.config.method?.toUpperCase()} ${response.config.url}`)
     return response
   },
   (error) => {

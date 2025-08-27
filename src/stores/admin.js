@@ -95,7 +95,6 @@ const refreshAll = async () => {
   try {
     loading.value = true
     const results = await Promise.all([
-      fetchStats(),
       fetchUsers(),
       fetchProducts()
     ])
@@ -107,7 +106,16 @@ const refreshAll = async () => {
         message: '部分資料載入失敗' 
       }
     }
-    
+
+    // 再獨立呼叫統計資料
+    const statsResult = await fetchStats()
+    if (!statsResult.success) {
+      return { 
+        success: false, 
+        message: '統計資料載入失敗' 
+      }
+    }
+
     return { success: true, message: '資料已重新整理' }
   } catch (error) {
     console.error('重新整理資料失敗:', error)

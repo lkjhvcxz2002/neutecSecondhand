@@ -156,6 +156,27 @@ async function initDatabase() {
         }
       });
 
+      // 建立密碼重設 token 表
+      database.run(`
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT NOT NULL,
+          token TEXT NOT NULL UNIQUE,
+          expires_at DATETIME NOT NULL,
+          used INTEGER DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_email (email),
+          INDEX idx_token (token),
+          INDEX idx_expires (expires_at)
+        )
+      `, (err) => {
+        if (err) {
+          console.log(`❌ password_reset_tokens 表創建失敗: ${err.message}`);
+        } else {
+          console.log('✅ password_reset_tokens 表創建成功');
+        }
+      });
+
       // 插入預設管理員帳號
       database.get("SELECT id FROM users WHERE email = 'admin@company.com'", (err, row) => {
         if (!row) {
