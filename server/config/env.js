@@ -77,13 +77,11 @@ const getEmailConfig = () => {
 // 獲取伺服器配置
 const getServerConfig = () => {
   // 檢測是否在 Railway 環境中
-  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production' || 
-                    process.env.RAILWAY_PROJECT_ID || 
-                    process.env.RAILWAY_SERVICE_NAME;
+  const isProd = process.env.NODE_ENV === 'production'
   
   return {
     port: parseInt(process.env.PORT) || parseInt(getConfig('PORT', 5000)),
-    host: isRailway ? '0.0.0.0' : getConfig('HOST', 'localhost'),
+    host: isProd ? '0.0.0.0' : getConfig('HOST', 'localhost'),
     env: getConfig('NODE_ENV', 'development')
   };
 };
@@ -91,12 +89,10 @@ const getServerConfig = () => {
 // 獲取資料庫配置
 const getDatabaseConfig = () => {
   // 檢測是否在 Railway 環境中
-  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production' || 
-                    process.env.RAILWAY_PROJECT_ID || 
-                    process.env.RAILWAY_SERVICE_NAME;
+  const isProd = process.env.NODE_ENV === 'production'
   
   // 在 Railway 環境中使用 SQLite 和 Volume 存儲
-  if (isRailway) {
+  if (isProd) {
     console.log('🚂 檢測到 Railway 環境，使用 SQLite 和 Volume 存儲')
     return {
       type: 'sqlite', // 使用 SQLite 而不是 PostgreSQL
@@ -161,9 +157,7 @@ const getMaintenanceConfig = () => {
 const showConfigSummary = () => {
   const dbConfig = getDatabaseConfig();
   const serverConfig = getServerConfig();
-  const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production' || 
-                    process.env.RAILWAY_PROJECT_ID || 
-                    process.env.RAILWAY_SERVICE_NAME;
+  const isProd = process.env.NODE_ENV === 'production'
   
   console.log('\n📋 配置摘要:');
   console.log('================');
@@ -171,7 +165,7 @@ const showConfigSummary = () => {
   console.log(`伺服器: ${serverConfig.host}:${serverConfig.port}`);
   console.log(`郵件服務: ${getConfig('EMAIL_SERVICE')}`);
   console.log(`郵件帳號: ${getConfig('EMAIL_USER')}`);
-  console.log(`資料庫: ${dbConfig.path}${isRailway ? ' (記憶體資料庫)' : ''}`);
+  console.log(`資料庫: ${dbConfig.path}${isProd ? ' (記憶體資料庫)' : ''}`);
   console.log(`維護模式: ${getConfig('MAINTENANCE_MODE', 'false')}`);
   console.log('================\n');
 };
