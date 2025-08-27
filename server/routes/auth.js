@@ -316,16 +316,98 @@ router.post('/reset-password', [
       );
       
       if (!tableExists) {
-        console.log('❌ password_reset_tokens 表不存在');
-        return res.status(500).json({ 
-          message: '系統暫時無法處理密碼重設，請稍後再試',
-          error: '資料庫表缺失'
-        });
+        console.log('❌ password_reset_tokens 表不存在，嘗試創建...');
+        
+        // 重試機制創建表
+        let retryCount = 0;
+        const maxRetries = 3;
+        let tableCreated = false;
+        
+        while (retryCount < maxRetries && !tableCreated) {
+          try {
+            if (retryCount > 0) {
+              console.log(`🔄 第 ${retryCount + 1} 次重試創建表...`);
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            
+            // 創建表
+            await new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                reject(new Error('創建表超時'));
+              }, 30000); // 30秒超時
+              
+              railwayDb.run(`
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  email TEXT NOT NULL,
+                  token TEXT NOT NULL UNIQUE,
+                  expires_at DATETIME NOT NULL,
+                  used INTEGER DEFAULT 0,
+                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+              `, (err) => {
+                clearTimeout(timeout);
+                if (err) reject(err);
+                else resolve();
+              });
+            });
+            
+            // 創建索引
+            await new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                reject(new Error('創建索引超時'));
+              }, 15000);
+              
+              railwayDb.run('CREATE INDEX IF NOT EXISTS idx_password_reset_email ON password_reset_tokens(email)', (err) => {
+                clearTimeout(timeout);
+                if (err) reject(err);
+                else resolve();
+              });
+            });
+            
+            await new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                reject(new Error('創建索引超時'));
+              }, 15000);
+              
+              railwayDb.run('CREATE INDEX IF NOT EXISTS idx_password_reset_token ON password_reset_tokens(token)', (err) => {
+                clearTimeout(timeout);
+                if (err) reject(err);
+                else resolve();
+              });
+            });
+            
+            await new Promise((resolve, reject) => {
+              const timeout = setTimeout(() => {
+                reject(new Error('創建索引超時'));
+              }, 15000);
+              
+              railwayDb.run('CREATE INDEX IF NOT EXISTS idx_password_reset_expires ON password_reset_tokens(expires_at)', (err) => {
+                clearTimeout(timeout);
+                if (err) reject(err);
+                else resolve();
+              });
+            });
+            
+            tableCreated = true;
+            console.log('✅ password_reset_tokens 表創建成功');
+            
+          } catch (error) {
+            retryCount++;
+            console.error(`❌ 第 ${retryCount} 次創建表失敗:`, error.message);
+            
+            if (retryCount >= maxRetries) {
+              console.error('❌ 創建表最終失敗，已重試', maxRetries, '次');
+              throw new Error('無法創建必要的資料庫表');
+            }
+          }
+        }
+      } else {
+        console.log('✅ password_reset_tokens 表已存在');
       }
-      console.log('✅ password_reset_tokens 表存在');
     } catch (error) {
-      console.error('❌ 檢查表失敗:', error);
-      return res.status(500).json({ message: '資料庫檢查失敗' });
+      console.error('❌ 檢查/創建表失敗:', error);
+      return res.status(500).json({ message: '資料庫表創建失敗' });
     }
 
     // 驗證 token

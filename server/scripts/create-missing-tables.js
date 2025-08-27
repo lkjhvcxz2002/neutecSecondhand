@@ -19,6 +19,28 @@ async function createMissingTables() {
     
     console.log('✅ 資料庫已連接');
     
+    // 先嘗試釋放資料庫鎖定
+    console.log('\n🔓 嘗試釋放資料庫鎖定...');
+    try {
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('釋放鎖定超時'));
+        }, 10000);
+        
+        railwayDb.run('PRAGMA busy_timeout = 30000', (err) => {
+          clearTimeout(timeout);
+          if (err) {
+            console.error('❌ 設置 busy_timeout 失敗:', err.message);
+          } else {
+            console.log('✅ 設置 busy_timeout 成功');
+          }
+          resolve();
+        });
+      });
+    } catch (error) {
+      console.error('❌ 釋放鎖定失敗:', error.message);
+    }
+    
     // 創建缺失的表
     const tables = [
       {
@@ -52,28 +74,50 @@ async function createMissingTables() {
     for (const table of tables) {
       console.log(`\n📋 創建表: ${table.name}`);
       
-      try {
-        await new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error(`創建表 ${table.name} 超時`));
-          }, 10000);
+      // 重試機制
+      let retryCount = 0;
+      const maxRetries = 3;
+      let success = false;
+      
+      while (retryCount < maxRetries && !success) {
+        try {
+          if (retryCount > 0) {
+            console.log(`🔄 第 ${retryCount + 1} 次重試...`);
+            // 等待一段時間再重試
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
           
-          railwayDb.run(table.sql, (err) => {
-            clearTimeout(timeout);
-            if (err) {
-              if (err.message.includes('already exists')) {
-                console.log(`✅ 表 ${table.name} 已存在`);
+          await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error(`創建表 ${table.name} 超時`));
+            }, 30000); // 增加到 30 秒
+            
+            railwayDb.run(table.sql, (err) => {
+              clearTimeout(timeout);
+              if (err) {
+                if (err.message.includes('already exists')) {
+                  console.log(`✅ 表 ${table.name} 已存在`);
+                  success = true;
+                } else {
+                  console.error(`❌ 創建表 ${table.name} 失敗:`, err.message);
+                  reject(err);
+                }
               } else {
-                console.error(`❌ 創建表 ${table.name} 失敗:`, err.message);
+                console.log(`✅ 表 ${table.name} 創建成功`);
+                success = true;
               }
-            } else {
-              console.log(`✅ 表 ${table.name} 創建成功`);
-            }
-            resolve();
+              resolve();
+            });
           });
-        });
-      } catch (error) {
-        console.error(`❌ 創建表 ${table.name} 失敗:`, error.message);
+          
+        } catch (error) {
+          retryCount++;
+          console.error(`❌ 第 ${retryCount} 次嘗試失敗:`, error.message);
+          
+          if (retryCount >= maxRetries) {
+            console.error(`❌ 創建表 ${table.name} 最終失敗，已重試 ${maxRetries} 次`);
+          }
+        }
       }
     }
     
@@ -93,7 +137,7 @@ async function createMissingTables() {
         await new Promise((resolve, reject) => {
           const timeout = setTimeout(() => {
             reject(new Error(`創建索引超時`));
-          }, 5000);
+          }, 15000); // 15 秒超時
           
           railwayDb.run(index, (err) => {
             clearTimeout(timeout);
@@ -123,7 +167,7 @@ async function createMissingTables() {
         const result = await new Promise((resolve, reject) => {
           const timeout = setTimeout(() => {
             reject(new Error(`驗證表 ${tableName} 超時`));
-          }, 5000);
+          }, 10000);
           
           railwayDb.get(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`, [tableName], (err, result) => {
             clearTimeout(timeout);
@@ -139,7 +183,7 @@ async function createMissingTables() {
           const columns = await new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
               reject(new Error(`檢查表結構超時`));
-            }, 5000);
+            }, 10000);
             
             railwayDb.all(`PRAGMA table_info(${tableName})`, (err, result) => {
               clearTimeout(timeout);
