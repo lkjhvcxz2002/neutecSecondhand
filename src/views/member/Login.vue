@@ -69,11 +69,11 @@
               </label>
             </div>
 
-            <div class="text-sm">
+            <!-- <div class="text-sm">
               <router-link to="/forgot-password" class="font-medium text-primary-600 hover:text-primary-500">
                 忘記密碼？
               </router-link>
-            </div>
+            </div> -->
           </div>
 
           <div>
