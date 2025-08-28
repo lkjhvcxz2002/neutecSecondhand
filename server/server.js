@@ -26,6 +26,7 @@ const adminRoutes = require('./routes/admin');
 const maintenanceRoutes = require('./routes/maintenance');
 const { initDatabase } = require('./database/init');
 const { verifyEmailConfig } = require('./services/emailService');
+const ipWhitelist = require('./middleware/ipWhitelist');
 
 const app = express();
 
@@ -179,7 +180,10 @@ app.get('/uploads/*', (req, res, next) => {
   
   // 發送檔案
   res.sendFile(fullPath);
-});
+});1
+
+// 添加 IP 白名單中間件
+app.use(ipWhitelist);
 
 // 路由
 app.use('/api/auth', authRoutes);
