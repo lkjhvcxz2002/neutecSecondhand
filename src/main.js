@@ -43,6 +43,15 @@ axios.interceptors.response.use(
       console.error('⏰ 請求超時:', error.config.url)
     } else if (error.response) {
       console.error('❌ 回應錯誤:', error.response.status, error.response.data)
+      
+      // 處理 403 訪問被拒的情況
+      if (error.response.status === 403) {
+        // 檢查是否為 IP 白名單拒絕
+        if (error.response.data && typeof error.response.data === 'string' && error.response.data.includes('訪問被拒絕')) {
+          router.push('/access-denied')
+          return Promise.reject(error)
+        }
+      }
     } else if (error.request) {
       console.error('❌ 網路錯誤:', error.message)
     }

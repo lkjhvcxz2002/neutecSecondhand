@@ -93,6 +93,12 @@ const routes = [
     component: () => import('../views/system/IconDemo.vue'),
     meta: { requiresAuth: false }
   },
+  {
+    path: '/access-denied',
+    name: 'AccessDenied',
+    component: () => import('../views/AccessDenied.vue'),
+    meta: { requiresAuth: false }
+  },
   // 404 頁面 - 必須放在最後，捕獲所有不匹配的路徑
   {
     path: '/:pathMatch(.*)*',
