@@ -1,4 +1,6 @@
 // middleware.js（放在專案根目錄）
+import { NextResponse } from 'next/server';
+
 export function middleware(request) {
     // 獲取客戶端 IP
     const clientIP = request.headers.get('x-forwarded-for') || 
