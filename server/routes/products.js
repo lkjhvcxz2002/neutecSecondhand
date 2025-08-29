@@ -325,7 +325,7 @@ router.post('/', authenticateToken, upload.array('images', 5), [
 router.put('/:id', authenticateToken, requireOwnerOrAdmin, upload.array('images', 5), [
   body('title').optional().trim().isLength({ min: 1, max: 100 }),
   body('description').optional().trim().isLength({ max: 1000 }),
-  body('price').optional().isInt({ min: 0 }),
+  body('price').optional(),
   body('category').optional().trim().isLength({ min: 1 }),
   body('trade_type').optional().trim().isLength({ min: 1 })
 ], (req, res) => {
