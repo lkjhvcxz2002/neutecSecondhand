@@ -216,9 +216,17 @@ const messageClass = computed(() => {
 })
 
 const isFormValid = computed(() => {
-  return form.value.title.trim() && 
-         form.value.price > 0 && 
-         form.value.category
+  const baseValidation = form.value.title.trim() && 
+                        form.value.category &&
+                        form.value.tradeType
+  
+  // 如果是出售类型，需要驗證價格
+  if (form.value.tradeType === TradeType.Sell) {
+    return baseValidation && form.value.price > 0
+  }
+  
+  // 其他交易类型不需要驗證價格
+  return baseValidation
 })
 
 const handleImageChange = async (event) => {
