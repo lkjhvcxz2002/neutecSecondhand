@@ -9,11 +9,10 @@
 </template>
 
 <script setup>
-import { useMaintenanceStore } from '@/stores/maintenance'
+import { useIndexStore } from '@/stores/index'
 
-const maintenanceStore = useMaintenanceStore()
-
-maintenanceStore.maintenanceMode.value = true
+const indexStore = useIndexStore()
+indexStore.isAccessDenied = true
 </script>
 
 <style scoped>

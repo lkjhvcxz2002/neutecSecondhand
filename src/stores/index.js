@@ -8,6 +8,7 @@ export const useIndexStore = defineStore('index', () => {
     const isMobile = ref(false)
     const isTablet = ref(false)
     const isDesktop = ref(false)
+    const isAccessDenied = ref(false)
     const screenWidth = ref(0)  
     // 判斷現行畫面寬度
     const checkScreenWidth = () => {
@@ -27,6 +28,7 @@ export const useIndexStore = defineStore('index', () => {
         isMobile,
         isTablet,
         isDesktop,
-        screenWidth
+        screenWidth,
+        isAccessDenied
     }
 })

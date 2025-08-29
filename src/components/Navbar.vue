@@ -1,7 +1,7 @@
 <template>
   <nav class="bg-white shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between h-16">
+      <div v-if="!indexStore.isAccessDenied" class="flex justify-between h-16">
         <div class="flex items-center">
           <router-link to="/" class="text-md font-bold text-primary-600 sm:text-2xl">
             二手交換平台
