@@ -262,10 +262,7 @@ async function startServer() {
     console.log('資料庫初始化完成');
     
     // 驗證郵件配置
-    const emailConfigValid = await verifyEmailConfig();
-    if (!emailConfigValid) {
-      console.log('⚠️  郵件服務配置有問題，郵件功能可能無法正常使用');
-    }
+    verifyEmailConfig();
     
     // 顯示配置摘要
     showConfigSummary();
