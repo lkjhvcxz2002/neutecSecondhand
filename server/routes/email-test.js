@@ -193,7 +193,6 @@ router.post('/send-batch-test', [
     console.log(`📧 開始批量發送測試郵件到 ${emails.length} 個郵箱`);
 
     const results = [];
-    const errors = [];
 
     // 批量發送郵件
     for (const email of emails) {
