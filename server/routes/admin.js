@@ -369,17 +369,26 @@ router.get('/stats', async (req, res) => {
       '分類統計'
     );
 
-    console.log('🚀 準備執行所有查詢...');
+    console.log('🚀 準備循序執行查詢...');
 
-    // 並行執行所有查詢
-    const [userStats, productStats, activeStats, categoryStats] = await Promise.all([
-      getUserStats(),
-      getProductStats(),
-      getActiveProductStats(),
-      getCategoryStats()
-    ]);
+    // 循序執行查詢，避免資料庫鎖定
+    console.log('1/4 執行商品統計查詢...');
+    const productStats = await getProductStats();
+    console.log('✅ 商品統計完成:', productStats);
 
-    console.log('✅ 所有查詢完成');
+    console.log('2/4 執行活躍商品統計查詢...');
+    const activeStats = await getActiveProductStats();
+    console.log('✅ 活躍商品統計完成:', activeStats);
+
+    console.log('3/4 執行分類統計查詢...');
+    const categoryStats = await getCategoryStats();
+    console.log('✅ 分類統計完成:', categoryStats);
+
+    console.log('4/4 執行用戶統計查詢...');
+    const userStats = await getUserStats();
+    console.log('✅ 用戶統計完成:', userStats);
+
+    console.log('✅ 所有查詢循序完成');
     console.log('📊 統計資料查詢完成:', {
       users: userStats.total_users,
       products: productStats.total_products,
@@ -437,16 +446,27 @@ router.get('/stats/simple', async (req, res) => {
     let productCount = 0;
     
     try {
-      // 用戶數量 - 使用 LIMIT 1 避免全表掃描
+      // 等待資料庫連接
+      console.log('⏳ 等待資料庫連接...');
+      await railwayDb.waitForConnection(10000);
+      console.log('✅ 資料庫連接就緒');
+      
+      // 用戶數量查詢
+      console.log('🔍 開始執行用戶統計查詢...');
       const userResult = await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error('用戶統計查詢超時'));
         }, 5000);
         
-        railwayDb.get('SELECT COUNT(*) as count FROM users LIMIT 1', (err, result) => {
+        railwayDb.get('SELECT COUNT(*) as count FROM users', (err, result) => {
           clearTimeout(timeout);
-          if (err) reject(err);
-          else resolve(result);
+          if (err) {
+            console.error('❌ 用戶統計查詢資料庫錯誤:', err);
+            reject(err);
+          } else {
+            console.log('📊 用戶統計查詢原始結果:', result);
+            resolve(result);
+          }
         });
       });
       userCount = userResult.count;
@@ -458,16 +478,22 @@ router.get('/stats/simple', async (req, res) => {
     }
     
     try {
-      // 商品數量 - 使用 LIMIT 1 避免全表掃描
+      // 商品數量查詢
+      console.log('🔍 開始執行商品統計查詢...');
       const productResult = await new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error('商品統計查詢超時'));
         }, 5000);
         
-        railwayDb.get('SELECT COUNT(*) as count FROM products LIMIT 1', (err, result) => {
+        railwayDb.get('SELECT COUNT(*) as count FROM products', (err, result) => {
           clearTimeout(timeout);
-          if (err) reject(err);
-          else resolve(result);
+          if (err) {
+            console.error('❌ 商品統計查詢資料庫錯誤:', err);
+            reject(err);
+          } else {
+            console.log('📊 商品統計查詢原始結果:', result);
+            resolve(result);
+          }
         });
       });
       productCount = productResult.count;

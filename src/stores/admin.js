@@ -5,54 +5,12 @@ import { ProductStatus, UserStatus } from '@/ts/index.enums'
 // 狀態
 const users = ref([])
 const products = ref([])
-const stats = ref({})
+const stats = ref({
+  totalUsers: 0,
+  totalProducts: 0,
+  activeProducts: 0
+})
 const loading = ref(false)
-
-// 獲取統計資料
-const fetchStats = async () => {
-  try {
-    loading.value = true
-    console.log('🚀 開始獲取統計資料...')
-    
-    const response = await axios.get('/api/admin/stats', {
-      timeout: 15000 // 15秒超時
-    })
-    
-    console.log('✅ 統計資料獲取成功:', response.data)
-    stats.value = response.data.stats
-    return { success: true, data: response.data.stats }
-  } catch (error) {
-    console.error('❌ 獲取統計資料失敗:', error)
-    
-    if (error.code === 'ECONNABORTED') {
-      return { 
-        success: false, 
-        message: '請求超時，請檢查網路連線' 
-      }
-    }
-    
-    if (error.response) {
-      return { 
-        success: false, 
-        message: error.response.data?.message || '獲取統計資料失敗' 
-      }
-    }
-    
-    if (error.request) {
-      return { 
-        success: false, 
-        message: '無法連接到伺服器，請檢查網路連線' 
-      }
-    }
-    
-    return { 
-      success: false, 
-      message: '獲取統計資料失敗：' + (error.message || '未知錯誤') 
-    }
-  } finally {
-    loading.value = false
-  }
-}
 
 // 獲取用戶列表
 const fetchUsers = async () => {
@@ -107,14 +65,10 @@ const refreshAll = async () => {
       }
     }
 
-    // 再獨立呼叫統計資料
-    const statsResult = await fetchStats()
-    if (!statsResult.success) {
-      return { 
-        success: false, 
-        message: '統計資料載入失敗' 
-      }
-    }
+    // 從users, products資料彙整出stats
+    stats.value.totalUsers = users.value.length
+    stats.value.totalProducts = products.value.length
+    stats.value.activeProducts = products.value.filter(product => product.status === ProductStatus.Active).length
 
     return { success: true, message: '資料已重新整理' }
   } catch (error) {
@@ -216,7 +170,11 @@ const toggleProductStatus = async (productId, currentStatus) => {
 const resetState = () => {
   users.value = []
   products.value = []
-  stats.value = {}
+  stats.value = {
+    totalUsers: 0,
+    totalProducts: 0,
+    activeProducts: 0
+  }
   loading.value = false
 }
 
@@ -229,7 +187,6 @@ export const useAdminStore = () => {
     loading,
     
     // 方法
-    fetchStats,
     fetchUsers,
     fetchProducts,
     refreshAll,

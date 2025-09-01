@@ -59,6 +59,16 @@ class RailwayDatabase {
 
   // 獲取單筆記錄
   get(sql, params = [], callback) {
+    if (!this.isConnected()) {
+      const error = new Error('資料庫未連接');
+      if (typeof callback === 'function') {
+        callback(error);
+      } else {
+        return Promise.reject(error);
+      }
+      return;
+    }
+
     if (typeof callback === 'function') {
       this.db.get(sql, params, callback);
     } else {
@@ -73,6 +83,16 @@ class RailwayDatabase {
 
   // 獲取多筆記錄
   all(sql, params = [], callback) {
+    if (!this.isConnected()) {
+      const error = new Error('資料庫未連接');
+      if (typeof callback === 'function') {
+        callback(error);
+      } else {
+        return Promise.reject(error);
+      }
+      return;
+    }
+
     if (typeof callback === 'function') {
       this.db.all(sql, params, callback);
     } else {
@@ -123,6 +143,20 @@ class RailwayDatabase {
   // 檢查資料庫是否已連接
   isConnected() {
     return this.db !== null && this.initialized;
+  }
+
+  // 等待資料庫初始化完成
+  async waitForConnection(timeout = 10000) {
+    const startTime = Date.now();
+    
+    while (!this.isConnected()) {
+      if (Date.now() - startTime > timeout) {
+        throw new Error('資料庫連接超時');
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    return true;
   }
 
   // 獲取存儲類型
