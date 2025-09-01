@@ -60,8 +60,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
+const router = useRouter()
 
 const form = ref({
   email: ''
@@ -84,6 +86,11 @@ const handleForgotPassword = async () => {
   if (result.success) {
     message.value = '重設密碼連結已發送到您的郵箱'
     messageType.value = 'success'
+
+    // 5秒後重定向到登入頁面
+    setTimeout(() => {
+      router.push('/login')
+    }, 5000)
   } else {
     message.value = result.message
     messageType.value = 'error'

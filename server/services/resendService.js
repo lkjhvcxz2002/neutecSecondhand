@@ -5,25 +5,25 @@ class ResendService {
     this.apiKey = process.env.RESEND_API_KEY;
     this.resend = null;
     this.isInitialized = false;
-    this.init();
+    // this.init();
   }
 
-  init() {
-    try {
-      const apiKey = this.apiKey;
-      if (apiKey) {
-        this.resend = new Resend(apiKey);
-        this.isInitialized = true;
-        console.log('✅ Resend 服務已初始化');
-        console.log(`🔑 API Key 前綴: ${apiKey.substring(0, 8)}...`);
-        console.log(`📧 預設發件人: ${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}`);
-      } else {
-        console.warn('⚠️ RESEND_API_KEY 未設定，郵件功能將被禁用');
-      }
-    } catch (error) {
-      console.error('❌ Resend 服務初始化失敗:', error);
-    }
-  }
+  // init() {
+  //   try {
+  //     const apiKey = this.apiKey;
+  //     if (apiKey) {
+  //       this.resend = new Resend(apiKey);
+  //       this.isInitialized = true;
+  //       console.log('✅ Resend 服務已初始化');
+  //       console.log(`🔑 API Key 前綴: ${apiKey.substring(0, 8)}...`);
+  //       console.log(`📧 預設發件人: ${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}`);
+  //     } else {
+  //       console.warn('⚠️ RESEND_API_KEY 未設定，郵件功能將被禁用');
+  //     }
+  //   } catch (error) {
+  //     console.error('❌ Resend 服務初始化失敗:', error);
+  //   }
+  // }
 
   // 發送測試郵件
   async sendTestEmail(toEmail, subject = 'Resend 測試郵件') {

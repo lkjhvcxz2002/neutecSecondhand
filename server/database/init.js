@@ -164,16 +164,38 @@ async function initDatabase() {
           token TEXT NOT NULL UNIQUE,
           expires_at DATETIME NOT NULL,
           used INTEGER DEFAULT 0,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          INDEX idx_email (email),
-          INDEX idx_token (token),
-          INDEX idx_expires (expires_at)
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `, (err) => {
         if (err) {
           console.log(`❌ password_reset_tokens 表創建失敗: ${err.message}`);
         } else {
           console.log('✅ password_reset_tokens 表創建成功');
+          
+          // 創建索引
+          database.run(`CREATE INDEX IF NOT EXISTS idx_password_reset_email ON password_reset_tokens (email)`, (err) => {
+            if (err) {
+              console.log(`⚠️ password_reset_tokens email 索引創建失敗: ${err.message}`);
+            } else {
+              console.log('✅ password_reset_tokens email 索引創建成功');
+            }
+          });
+          
+          database.run(`CREATE INDEX IF NOT EXISTS idx_password_reset_token ON password_reset_tokens (token)`, (err) => {
+            if (err) {
+              console.log(`⚠️ password_reset_tokens token 索引創建失敗: ${err.message}`);
+            } else {
+              console.log('✅ password_reset_tokens token 索引創建成功');
+            }
+          });
+          
+          database.run(`CREATE INDEX IF NOT EXISTS idx_password_reset_expires ON password_reset_tokens (expires_at)`, (err) => {
+            if (err) {
+              console.log(`⚠️ password_reset_tokens expires_at 索引創建失敗: ${err.message}`);
+            } else {
+              console.log('✅ password_reset_tokens expires_at 索引創建成功');
+            }
+          });
         }
       });
 
