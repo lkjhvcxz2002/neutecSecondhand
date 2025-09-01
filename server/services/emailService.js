@@ -1,146 +1,78 @@
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 
-// 郵件服務配置
-const getEmailConfig = () => {
-  const emailService = process.env.EMAIL_SERVICE || 'gmail';
-  const emailUser = process.env.EMAIL_USER;
-  const emailPass = process.env.EMAIL_PASS;
+// 外部郵件服務配置
+const MAIL_SERVICE_URL = process.env.MAIL_SERVICE_URL;
 
-  // 根據服務類型返回不同配置
-  switch (emailService.toLowerCase()) {
-    case 'proton':
-      return {
-        host: '127.0.0.1',
-        port: 1025,
-        secure: false,
-        auth: {
-          user: emailUser,
-          pass: emailPass
-        },
-        // Proton Mail Bridge 配置
-        tls: {
-          rejectUnauthorized: false
-        }
-      };
-
-    case 'outlook':
-      return {
-        service: 'outlook',
-        auth: {
-          user: emailUser,
-          pass: emailPass
-        }
-      };
-
-    case 'yahoo':
-      return {
-        service: 'yahoo',
-        auth: {
-          user: emailUser,
-          pass: emailPass
-        }
-      };
-
-    case 'gmail':
-      return {
-        service: 'gmail',
-        auth: {
-          user: emailUser,
-          pass: emailPass
-        }
-      };
-
-    case 'ethereal':
-      // 測試用郵件服務
-      return {
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        auth: {
-          user: emailUser || 'test@ethereal.email',
-          pass: emailPass || 'test123'
-        }
-      };
-
-    case 'custom':
-      // 自定義 SMTP 伺服器
-      return {
-        host: process.env.SMTP_HOST || 'localhost',
-        port: parseInt(process.env.SMTP_PORT) || 587,
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: emailUser,
-          pass: emailPass
-        }
-      };
-
-    default:
-      // 預設使用 Proton Mail
-      return {
-        host: '127.0.0.1',
-        port: 1025,
-        secure: false,
-        auth: {
-          user: emailUser,
-          pass: emailPass
-        }
-      };
-  }
-};
-
-// 創建郵件傳輸器
-const createTransporter = () => {
-  const config = getEmailConfig();
-  console.log('📧 郵件服務配置:', {
-    service: process.env.EMAIL_SERVICE || 'gmail',
-    host: config.host || config.service,
-    port: config.port,
-    user: config.auth.user,
-    pass: config.auth.pass
-  });
-  
-  return nodemailer.createTransport(config);
-};
-
-const transporter = createTransporter();
-
-// 驗證郵件配置
+// 驗證郵件服務狀態
 const verifyEmailConfig = async () => {
   try {
-    console.log('🚀 開始驗證郵件配置...')
-    await transporter.verify();
-    console.log('✅ 郵件服務配置驗證成功');
-    return true;
-  } catch (error) {
-    console.error('❌ 郵件服務配置驗證失敗:', error.message);
+    console.log('🚀 開始驗證外部郵件服務...');
     
-    // 提供具體的錯誤建議
-    if (error.message.includes('Invalid login')) {
-      console.log('💡 建議：檢查郵箱和密碼是否正確');
-    } else if (error.message.includes('ECONNREFUSED')) {
-      console.log('💡 建議：檢查 SMTP 伺服器地址和端口');
-    } else if (error.message.includes('ENOTFOUND')) {
-      console.log('💡 建議：檢查網路連接和 DNS 設定');
+    const response = await axios.get(`${MAIL_SERVICE_URL}/status`, {
+      timeout: 10000
+    });
+    
+    if (response.data.success && response.data.data.isInitialized) {
+      console.log('✅ 外部郵件服務配置驗證成功');
+      console.log(`📧 服務: ${response.data.data.service}`);
+      console.log(`📮 發件人: ${response.data.data.fromEmail}`);
+      return true;
+    } else {
+      console.log('⚠️ 外部郵件服務未完全初始化');
+      return false;
+    }
+    
+  } catch (error) {
+    console.error('❌ 外部郵件服務配置驗證失敗:', error.message);
+    
+    if (error.code === 'ECONNREFUSED') {
+      console.log('💡 建議：檢查郵件服務是否正在運行');
+    } else if (error.code === 'ENOTFOUND') {
+      console.log('💡 建議：檢查郵件服務 URL 是否正確');
+    } else if (error.code === 'ETIMEDOUT') {
+      console.log('💡 建議：檢查網路連接和防火牆設定');
     }
     
     return false;
   }
 };
 
-const mailContenctOptions = {
-  from: `"風格妍究社 - 二手交換平台" <${process.env.EMAIL_USER}>`
-}
+// 發送郵件到外部服務的通用函數
+const sendEmailToExternalService = async (mailData) => {
+  try {
+    console.log('📧 準備發送郵件到外部服務...');
+    console.log(`📋 主題: ${mailData.subject}`);
+    console.log(`📮 收件人: ${mailData.receivers.join(', ')}`);
+    
+    const response = await axios.post(`${MAIL_SERVICE_URL}/send`, mailData, {
+      timeout: 30000,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.data.success) {
+      console.log('✅ 郵件發送成功:', response.data.data.messageId);
+      return { success: true, messageId: response.data.data.messageId };
+    } else {
+      throw new Error(response.data.message || '郵件發送失敗');
+    }
+    
+  } catch (error) {
+    console.error('❌ 郵件發送失敗:', error.message);
+    return { success: false, error: error.message };
+  }
+};
 
 // 發送重設密碼郵件
 const sendPasswordResetEmail = async (userEmail, userName, resetToken) => {
   try {
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
     
-    const mailOptions = {
-      ...mailContenctOptions,
-      to: userEmail,
+    const mailData = {
+      receivers: [userEmail],
       subject: '重設密碼 - 二手交換平台',
-      html: `
+      content: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #f8f9fa; padding: 20px; text-align: center;">
             <h1 style="color: #333; margin: 0;">二手交換平台</h1>
@@ -188,12 +120,11 @@ const sendPasswordResetEmail = async (userEmail, userName, resetToken) => {
             </p>
           </div>
         </div>
-      `
+      `,
+      contentType: 'html'
     };
 
-    const result = await transporter.sendMail(mailOptions);
-    console.log(`✅ 重設密碼郵件已發送到: ${userEmail}`);
-    return { success: true, messageId: result.messageId };
+    return await sendEmailToExternalService(mailData);
     
   } catch (error) {
     console.error(`❌ 發送重設密碼郵件失敗: ${userEmail}`, error);
@@ -204,11 +135,10 @@ const sendPasswordResetEmail = async (userEmail, userName, resetToken) => {
 // 發送歡迎郵件
 const sendWelcomeEmail = async (userEmail, userName) => {
   try {
-    const mailOptions = {
-      ...mailContenctOptions,
-      to: userEmail,
+    const mailData = {
+      receivers: [userEmail],
       subject: '歡迎加入二手交換平台！',
-      html: `
+      content: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: #28a745; padding: 20px; text-align: center;">
             <h1 style="color: #ffffff; margin: 0;">🎉 歡迎加入！</h1>
@@ -254,12 +184,11 @@ const sendWelcomeEmail = async (userEmail, userName) => {
             </p>
           </div>
         </div>
-      `
+      `,
+      contentType: 'html'
     };
 
-    const result = await transporter.sendMail(mailOptions);
-    console.log(`✅ 歡迎郵件已發送到: ${userEmail}`);
-    return { success: true, messageId: result.messageId };
+    return await sendEmailToExternalService(mailData);
     
   } catch (error) {
     console.error(`❌ 發送歡迎郵件失敗: ${userEmail}`, error);
@@ -273,11 +202,10 @@ const sendAccountStatusEmail = async (userEmail, userName, status, reason = '') 
     const statusText = status === 'active' ? '啟用' : '封鎖';
     const statusColor = status === 'active' ? '#28a745' : '#dc3545';
     
-    const mailOptions = {
-      ...mailContenctOptions,
-      to: userEmail,
+    const mailData = {
+      receivers: [userEmail],
       subject: `帳戶狀態變更 - 二手交換平台`,
-      html: `
+      content: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background-color: ${statusColor}; padding: 20px; text-align: center;">
             <h1 style="color: #ffffff; margin: 0;">帳戶狀態變更</h1>
@@ -309,15 +237,14 @@ const sendAccountStatusEmail = async (userEmail, userName, status, reason = '') 
           <div style="background-color: #f8f9fa; padding: 20px; text-align: center;">
             <p style="color: #999; margin: 0; font-size: 14px;">
               © 2024 二手交換平台. 此郵件由系統自動發送，請勿回覆。
-            </p>
+            </div>
           </div>
         </div>
-      `
+      `,
+      contentType: 'html'
     };
 
-    const result = await transporter.sendMail(mailOptions);
-    console.log(`✅ 帳戶狀態變更郵件已發送到: ${userEmail}`);
-    return { success: true, messageId: result.messageId };
+    return await sendEmailToExternalService(mailData);
     
   } catch (error) {
     console.error(`❌ 發送帳戶狀態變更郵件失敗: ${userEmail}`, error);
