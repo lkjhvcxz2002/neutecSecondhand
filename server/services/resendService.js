@@ -2,6 +2,7 @@ const { Resend } = require('resend');
 
 class ResendService {
   constructor() {
+    this.apiKey = process.env.RESEND_API_KEY;
     this.resend = null;
     this.isInitialized = false;
     this.init();
@@ -9,11 +10,13 @@ class ResendService {
 
   init() {
     try {
-      const apiKey = process.env.RESEND_API_KEY;
+      const apiKey = this.apiKey;
       if (apiKey) {
         this.resend = new Resend(apiKey);
         this.isInitialized = true;
         console.log('✅ Resend 服務已初始化');
+        console.log(`🔑 API Key 前綴: ${apiKey.substring(0, 8)}...`);
+        console.log(`📧 預設發件人: ${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}`);
       } else {
         console.warn('⚠️ RESEND_API_KEY 未設定，郵件功能將被禁用');
       }
@@ -68,7 +71,8 @@ class ResendService {
       });
 
       if (error) {
-        throw new Error(`Resend 發送失敗: ${error.message}`);
+        console.error('❌ Resend API 錯誤詳情:', error);
+        throw new Error(`Resend 發送失敗: ${error.message || JSON.stringify(error)}`);
       }
 
       return {
@@ -141,7 +145,8 @@ class ResendService {
       });
 
       if (error) {
-        throw new Error(`Resend 發送失敗: ${error.message}`);
+        console.error('❌ Resend API 錯誤詳情:', error);
+        throw new Error(`Resend 發送失敗: ${error.message || JSON.stringify(error)}`);
       }
 
       return {
@@ -215,7 +220,8 @@ class ResendService {
       });
 
       if (error) {
-        throw new Error(`Resend 發送失敗: ${error.message}`);
+        console.error('❌ Resend API 錯誤詳情:', error);
+        throw new Error(`Resend 發送失敗: ${error.message || JSON.stringify(error)}`);
       }
 
       return {
@@ -234,8 +240,8 @@ class ResendService {
   getStatus() {
     return {
       isInitialized: this.isInitialized,
-      hasApiKey: !!process.env.RESEND_API_KEY,
-      fromEmail: process.env.RESEND_FROM_EMAIL || 'noreply@yourdomain.com'
+      hasApiKey: !!this.apiKey,
+      fromEmail: process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'
     };
   }
 }
