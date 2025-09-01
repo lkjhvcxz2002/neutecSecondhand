@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resend 郵件測試</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .status {
+            background-color: #e2e3e5;
+            border: 1px solid #d6d8db;
+            color: #383d41;
+            margin-bottom: 20px;
+        }
+        .batch-input {
+            margin-bottom: 10px;
+        }
+        .remove-email {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 5px 10px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .remove-email:hover {
+            background-color: #c82333;
+        }
+        .add-email {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .add-email:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📧 Resend 郵件測試工具</h1>
+        
+        <!-- 服務狀態 -->
+        <div id="status" class="status">
+            正在檢查服務狀態...
+        </div>
+        
+        <!-- 測試郵件表單 -->
+        <h2>發送測試郵件</h2>
+        <form id="testForm">
+            <div class="form-group">
+                <label for="email">收件人郵箱：</label>
+                <input type="email" id="email" name="email" required placeholder="example@email.com">
+            </div>
+            <div class="form-group">
+                <label for="subject">郵件主題（可選）：</label>
+                <input type="text" id="subject" name="subject" placeholder="測試郵件主題">
+            </div>
+            <button type="submit">發送測試郵件</button>
+        </form>
+        
+        <!-- 歡迎郵件表單 -->
+        <h2>發送歡迎郵件</h2>
+        <form id="welcomeForm">
+            <div class="form-group">
+                <label for="welcomeEmail">收件人郵箱：</label>
+                <input type="email" id="welcomeEmail" name="email" required placeholder="example@email.com">
+            </div>
+            <div class="form-group">
+                <label for="userName">用戶名：</label>
+                <input type="text" id="userName" name="userName" required placeholder="用戶名">
+            </div>
+            <button type="submit">發送歡迎郵件</button>
+        </form>
+        
+        <!-- 密碼重設郵件表單 -->
+        <h2>發送密碼重設郵件</h2>
+        <form id="resetForm">
+            <div class="form-group">
+                <label for="resetEmail">收件人郵箱：</label>
+                <input type="email" id="resetEmail" name="email" required placeholder="example@email.com">
+            </div>
+            <div class="form-group">
+                <label for="resetToken">重設令牌：</label>
+                <input type="text" id="resetToken" name="resetToken" required placeholder="重設令牌">
+            </div>
+            <div class="form-group">
+                <label for="resetUrl">重設連結：</label>
+                <input type="url" id="resetUrl" name="resetUrl" required placeholder="https://example.com/reset-password">
+            </div>
+            <button type="submit">發送重設郵件</button>
+        </form>
+        
+        <!-- 批量測試郵件表單 -->
+        <h2>批量發送測試郵件</h2>
+        <form id="batchForm">
+            <div class="form-group">
+                <label>郵箱列表：</label>
+                <div id="emailList">
+                    <div class="batch-input">
+                        <input type="email" name="emails[]" required placeholder="example1@email.com">
+                    </div>
+                    <div class="batch-input">
+                        <input type="email" name="emails[]" required placeholder="example2@email.com">
+                    </div>
+                </div>
+                <button type="button" class="add-email" onclick="addEmailField()">+ 添加郵箱</button>
+            </div>
+            <div class="form-group">
+                <label for="batchSubject">郵件主題（可選）：</label>
+                <input type="text" id="batchSubject" name="subject" placeholder="批量測試郵件主題">
+            </div>
+            <button type="submit">批量發送</button>
+        </form>
+        
+        <!-- 結果顯示 -->
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/email-test';
+        
+        // 檢查服務狀態
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const data = await response.json();
+                
+                const statusDiv = document.getElementById('status');
+                if (data.success) {
+                    const status = data.data;
+                    statusDiv.innerHTML = `
+                        <strong>服務狀態：</strong><br>
+                        ✅ 已初始化: ${status.isInitialized ? '是' : '否'}<br>
+                        🔑 API 金鑰: ${status.hasApiKey ? '已設定' : '未設定'}<br>
+                        📧 發件人: ${status.fromEmail}
+                    `;
+                    statusDiv.className = 'status success';
+                } else {
+                    statusDiv.innerHTML = `❌ 狀態檢查失敗: ${data.message}`;
+                    statusDiv.className = 'status error';
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = `❌ 無法連接到服務: ${error.message}`;
+                document.getElementById('status').className = 'status error';
+            }
+        }
+        
+        // 發送測試郵件
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                email: formData.get('email'),
+                subject: formData.get('subject')
+            };
+            
+            await sendRequest('/send-test', data, '測試郵件');
+        });
+        
+        // 發送歡迎郵件
+        document.getElementById('welcomeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                email: formData.get('email'),
+                userName: formData.get('userName')
+            };
+            
+            await sendRequest('/send-welcome', data, '歡迎郵件');
+        });
+        
+        // 發送密碼重設郵件
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                email: formData.get('email'),
+                resetToken: formData.get('resetToken'),
+                resetUrl: formData.get('resetUrl')
+            };
+            
+            await sendRequest('/send-reset', data, '密碼重設郵件');
+        });
+        
+        // 批量發送測試郵件
+        document.getElementById('batchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const emails = Array.from(formData.getAll('emails[]')).filter(email => email.trim());
+            const data = {
+                emails: emails,
+                subject: formData.get('subject')
+            };
+            
+            await sendRequest('/send-batch-test', data, '批量測試郵件');
+        });
+        
+        // 發送請求的通用函數
+        async function sendRequest(endpoint, data, description) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `🔄 正在發送${description}...`;
+            resultDiv.className = 'result info';
+            
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `✅ ${description}發送成功！\n\n${JSON.stringify(result.data, null, 2)}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `❌ ${description}發送失敗：${result.message}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ 請求失敗：${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // 添加郵箱欄位
+        function addEmailField() {
+            const emailList = document.getElementById('emailList');
+            const newField = document.createElement('div');
+            newField.className = 'batch-input';
+            newField.innerHTML = `
+                <input type="email" name="emails[]" required placeholder="example@email.com">
+                <button type="button" class="remove-email" onclick="removeEmailField(this)">移除</button>
+            `;
+            emailList.appendChild(newField);
+        }
+        
+        // 移除郵箱欄位
+        function removeEmailField(button) {
+            button.parentElement.remove();
+        }
+        
+        // 頁面載入時檢查狀態
+        window.addEventListener('load', checkStatus);
+    </script>
+</body>
+</html>

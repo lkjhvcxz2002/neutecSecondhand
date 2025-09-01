@@ -24,6 +24,8 @@ const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const adminRoutes = require('./routes/admin');
 const maintenanceRoutes = require('./routes/maintenance');
+const emailTestRoutes = require('./routes/email-test');
+
 const { initDatabase } = require('./database/init');
 const { verifyEmailConfig } = require('./services/emailService');
 const ipWhitelist = require('./middleware/ipWhitelist');
@@ -190,6 +192,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
+app.use('/api/email-test', emailTestRoutes);
 
 // 健康檢查
 app.get('/api/health', (req, res) => {
