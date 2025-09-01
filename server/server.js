@@ -114,6 +114,9 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 設定靜態檔案服務
+app.use(express.static(path.join(__dirname, 'public')));
+
 // 專門的圖片服務路由 - 確保 CORS 標頭正確設置
 app.get('/uploads/*', (req, res, next) => {
   // 獲取圖片 CORS 配置
