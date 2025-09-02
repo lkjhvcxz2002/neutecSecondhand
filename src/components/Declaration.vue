@@ -6,6 +6,7 @@
         <li>僅接受二手商品交易，不得用於其他營利用途</li>
         <li>若交易過程中發生任何糾紛，公司與福委會皆不會協助協調。交易行為僅為個人行為，與公司無關。</li>
         <li>不得由社團或公司名義發起販售交易/盈利活動，當然也不可變賣/轉讓社團資產。</li>
+        <li>所有上架之商品，無論售出與否，均會在 <span class="font-bold text-red-500">三個月內</span> 刪除資料，以節省資源。如有需要，請自行重新上架。</li>
       </ul>
     </div>
     <div v-if="needAgreeButton" class="mt-2 flex justify-center">

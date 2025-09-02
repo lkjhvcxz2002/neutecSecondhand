@@ -13,11 +13,11 @@
       <div>
         <div v-if="product.images && product.images.length > 0" class="space-y-4">
           <!-- 先暫時將第一張圖片作為主圖 -->
-          <div class="w-full h-96">
+          <div class="w-full h-96 bg-black/10 rounded-lg flex items-center justify-center">
             <img 
               :src="getProductImageUrl(product.images[0])" 
               :alt="`${product.title} - 主圖`"
-              class="w-full h-96 object-cover rounded-lg"
+              class="max-w-full max-h-full w-full object-contain rounded-lg"
             />
           </div>
           <!-- 手機版縮圖說明 -->
@@ -49,7 +49,7 @@
             </div>
           </div>
         </div>
-        <div v-else class="w-full h-96 bg-gray-200 rounded-lg flex items-center justify-center">
+        <div v-else class="w-full h-96 bg-black/10 rounded-lg flex items-center justify-center">
           <div class="text-gray-400">無圖片</div>
         </div>
       </div>
@@ -140,6 +140,10 @@
 
         <!-- 操作按鈕 -->
         <div v-if="authStore.isAuthenticated && isProductOwner && product.status" class="border-t border-gray-200 pt-4 space-y-3 flex flex-col">
+          <!-- 賣家操作 -->
+          <div>
+            <span class="flex items-center justify-center text-sm font-medium text-gray-500">賣家操作</span>
+          </div>
           <!-- 編輯商品 -->
           <router-link 
             :to="`/edit-product/${product.id}`"
@@ -147,6 +151,7 @@
           >
             編輯商品
           </router-link>
+
           <!-- 將商品狀態切換為上架中 -->
           <button 
             v-if="product.status === ProductStatus.Processing"
@@ -189,8 +194,19 @@
           </button>
         </div>
 
-        <div class="text-sm text-gray-500">
-          上架時間: {{ formatDate(product.created_at) }}
+        <div class="flex justify-between">
+          <span class="text-sm text-gray-500">
+            上架時間: {{ formatDate(product.created_at) }}
+          </span>
+          <Tooltip
+            v-if="isProductOwner" 
+            :text="`所有商品，均會在上架3個月後自動刪除`"
+            :position="'left'"
+          >
+            <span class="text-sm text-gray-500"> 
+              距離商品刪除還剩 <span class="font-bold text-red-500">{{ calculateDaysUntilExpiration(product.created_at) }}</span> 天
+            </span>
+          </Tooltip>
         </div>
 
         <!-- 免責聲明 -->
@@ -307,6 +323,8 @@ import Declaration from '@/components/Declaration.vue'
 import { getProductImageUrl, getAvatarUrl } from '@/utils/imageUrl'
 import { ProductStatus } from '@/ts/index.enums'
 import { getTelegramLink } from '@/composables/useTelegramLink'
+import Tooltip from '@/components/Tooltip.vue'
+import { calculateDaysUntilExpiration } from '@/utils/common'
 
 const route = useRoute()
 const authStore = useAuthStore()

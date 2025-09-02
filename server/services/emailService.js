@@ -252,9 +252,85 @@ const sendAccountStatusEmail = async (userEmail, userName, status, reason = '') 
   }
 };
 
+// 發送商品上架通知郵件
+const sendProductListingNotification = async (product, seller) => {
+  try {
+    // 管理員通知郵件地址 - 可以從環境變數讀取
+    const adminEmail = 'parker.du@neutec.com.tw';
+    const tradeTypeText = product.trade_type;
+    
+    // 格式化價格顯示
+    const priceDisplay = tradeTypeText === '買賣' ? `NT$ ${product.price}` : 
+                         tradeTypeText === '贈送' ? '免費贈送' : 
+                         tradeTypeText === '交換' ? '交換' : '未知';
+    
+    const mailData = {
+      receivers: [adminEmail],
+      subject: `🆕 新商品上架通知 - ${product.title}`,
+      content: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background-color: #28a745; padding: 20px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0;">🆕 新商品上架</h1>
+          </div>
+          
+          <div style="padding: 20px; background-color: #ffffff;">
+            <h2 style="color: #333;">商品資訊</h2>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+              <h3 style="color: #333; margin-top: 0;">📦 商品名稱</h3>
+              <p style="color: #666; margin: 0; font-size: 18px; font-weight: bold;">${product.title}</p>
+              
+              <h3 style="color: #333; margin-top: 20px;">📝 商品描述</h3>
+              <p style="color: #666; margin: 0; line-height: 1.6;">${product.description || '無描述'}</p>
+              
+              <h3 style="color: #333; margin-top: 20px;">💰 價格資訊</h3>
+              <p style="color: #666; margin: 0;">
+                <span style="background-color: #e9ecef; padding: 4px 8px; border-radius: 3px; margin-right: 10px;">${tradeTypeText}</span>
+                <span style="font-weight: bold; color: #28a745;">${priceDisplay}</span>
+              </p>
+              
+              <h3 style="color: #333; margin-top: 20px;">🏷️ 分類</h3>
+              <p style="color: #666; margin: 0;">${product.category}</p>
+            </div>
+            
+            <div style="background-color: #e3f2fd; padding: 20px; border-radius: 5px; margin: 20px 0;">
+              <h3 style="color: #1976d2; margin-top: 0;">👤 賣家資訊</h3>
+              <p style="color: #666; margin: 0;"><strong>姓名：</strong>${seller.name || '未設定'}</p>
+              <p style="color: #666; margin: 0;"><strong>Telegram：</strong>${seller.telegram ? `@${seller.telegram}` : '未設定'}</p>
+              <p style="color: #666; margin: 0;"><strong>上架時間：</strong>${new Date(product.created_at).toLocaleString('zh-TW')}</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/products/${product.id}" 
+                 style="background-color: #007bff; color: #ffffff; padding: 12px 30px; 
+                        text-decoration: none; border-radius: 5px; display: inline-block;">
+                查看商品詳情
+              </a>
+            </div>
+          </div>
+          
+          <div style="background-color: #f8f9fa; padding: 20px; text-align: center;">
+            <p style="color: #999; margin: 0; font-size: 14px;">
+              © 2024 二手交換平台. 此郵件由系統自動發送，請勿回覆。
+            </p>
+          </div>
+        </div>
+      `,
+      contentType: 'html'
+    };
+
+    return await sendEmailToExternalService(mailData);
+    
+  } catch (error) {
+    console.error(`❌ 發送商品上架通知郵件失敗: ${product.title}`, error);
+    return { success: false, error: error.message };
+  }
+};
+
 module.exports = {
   verifyEmailConfig,
   sendPasswordResetEmail,
   sendWelcomeEmail,
-  sendAccountStatusEmail
+  sendAccountStatusEmail,
+  sendProductListingNotification
 };

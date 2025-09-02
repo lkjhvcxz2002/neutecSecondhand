@@ -127,14 +127,14 @@
         <ProductStatusTag :status="product.status" />
         
         <!-- 商品圖片 -->
-        <div v-if="product.images && product.images.length > 0" class="w-full h-48">
-        <img 
-          :src="getProductImageUrl(product.images[0])" 
-          :alt="product.title"
-          class="w-full h-48 object-cover rounded-lg mb-4"
-        />
+        <div v-if="product.images && product.images.length > 0" class="w-full h-48 bg-black/10 rounded-lg mb-4 flex items-center justify-center">
+          <img 
+            :src="getProductImageUrl(product.images[0])" 
+            :alt="product.title"
+            class="max-w-full max-h-full w-full object-contain rounded-lg"
+          />
         </div>
-        <div v-else class="w-full h-48 bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
+        <div v-else class="w-full h-48 bg-black/10 rounded-lg mb-4 flex items-center justify-center">
           <span class="text-gray-400 text-sm">無圖片</span>
         </div>
         <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ product.title }}</h3>

@@ -158,7 +158,8 @@ app.get('/uploads/*', (req, res, next) => {
   }
   
   const imagePath = req.path.replace('/uploads', '');
-  const fullPath = path.join(getDatabaseConfig().uploadPath, imagePath);
+  const uploadPath = path.resolve(getDatabaseConfig().uploadPath);
+  const fullPath = path.join(uploadPath, imagePath);
   
   console.log(`📁 圖片路徑: ${imagePath}`);
   console.log(`📁 完整路徑: ${fullPath}`);

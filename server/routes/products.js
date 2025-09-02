@@ -6,6 +6,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { getDatabaseConfig } = require('../config/env');
+const { sendProductListingNotification } = require('../services/emailService');
 
 const router = express.Router();
 
@@ -296,7 +297,7 @@ router.post('/', authenticateToken, upload.array('images', 5), [
         WHERE p.id = ?
       `;
 
-      railwayDb.get(getProductQuery, [this.lastID], (err, product) => {
+      railwayDb.get(getProductQuery, [this.lastID], async (err, product) => {
         if (err) {
           return res.status(500).json({ message: '獲取商品資料失敗' });
         }
@@ -309,9 +310,32 @@ router.post('/', authenticateToken, upload.array('images', 5), [
           }
         }
 
+        // 立即回傳商品創建成功
         res.status(201).json({
           message: '商品創建成功',
           product
+        });
+
+        // 非同步發送商品上架通知郵件（不等待結果）
+        setImmediate(async () => {
+          try {
+            const seller = {
+              name: product.seller_name,
+              telegram: product.seller_telegram
+            };
+            
+            console.log('📧 準備發送商品上架通知郵件...');
+            const emailResult = await sendProductListingNotification(product, seller);
+            
+            if (emailResult.success) {
+              console.log('✅ 商品上架通知郵件發送成功');
+            } else {
+              console.log('⚠️ 商品上架通知郵件發送失敗:', emailResult.error);
+            }
+          } catch (emailError) {
+            console.error('❌ 發送商品上架通知郵件時發生錯誤:', emailError);
+            // 不影響商品創建流程，只記錄錯誤
+          }
         });
       });
     });

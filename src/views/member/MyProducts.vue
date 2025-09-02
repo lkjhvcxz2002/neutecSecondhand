@@ -59,14 +59,14 @@
             <!-- 商品圖片 -->
             <div class="w-full md:w-32 h-32 flex-shrink-0 relative">
               <ProductStatusTag :status="product.status" class="absolute" />
-              <div v-if="product.images && product.images.length > 0" class="w-full h-full">
+              <div v-if="product.images && product.images.length > 0" class="w-full h-full bg-black/10 rounded-lg flex items-center justify-center">
                 <img 
                   :src="getProductImageUrl(product.images[0])" 
                   :alt="product.title"
-                  class="w-full h-full object-cover rounded-lg"
+                  class="max-w-full max-h-full object-contain rounded-lg"
                 />
               </div>
-              <div v-else class="w-full h-full bg-gray-200 rounded-lg flex items-center justify-center">
+              <div v-else class="w-full h-full bg-black/10 rounded-lg flex items-center justify-center">
                 <span class="text-gray-400 text-sm">無圖片</span>
               </div>
             </div>
@@ -92,8 +92,16 @@
                 </span>
               </div>
 
-              <div class="text-sm text-gray-500 mb-3">
-                上架時間：{{ formatDate(product.created_at) }}
+              <div class="flex items-center justify-between">
+                <span class="text-sm text-gray-500">上架時間：{{ formatDate(product.created_at) }}</span>
+                <Tooltip
+                  :text="`所有商品，均會在上架3個月後自動刪除`"
+                  :position="'left'"
+                >
+                  <span class="text-sm text-gray-500"> 
+                    距離商品刪除還剩 <span class="font-bold text-red-500">{{ calculateDaysUntilExpiration(product.created_at) }}</span> 天
+                  </span>
+                </Tooltip>
               </div>
 
               <!-- 操作按鈕 -->
@@ -188,8 +196,9 @@ import Layout from '@/components/Layout.vue'
 import Icon from '@/components/Icon.vue'
 import ProductStatusTag from '@/components/ProductStatusTag.vue'
 import { getProductImageUrl } from '@/utils/imageUrl'
+import Tooltip from '@/components/Tooltip.vue'
+import { calculateDaysUntilExpiration } from '@/utils/common'
 
-const router = useRouter()
 const productsStore = useProductsStore()
 const authStore = useAuthStore()
 
