@@ -163,6 +163,14 @@
           >
             切換為交易中
           </button>
+          <!-- 將商品狀態切換為已售出 -->
+          <button 
+            v-if="product.status === ProductStatus.Processing"
+            @click="openStatusConfirmModal(ProductStatus.Sold)"
+            class="btn-success w-full"
+          >
+            切換為已售出
+          </button>
           <!-- 下架商品 -->
           <button 
             v-if="product.status !== ProductStatus.Inactive"
@@ -204,6 +212,9 @@
         </span>
         <span v-else-if="newStatus === ProductStatus.Inactive">
           下架商品
+        </span>
+        <span v-else-if="newStatus === ProductStatus.Sold">
+          切換為已售出
         </span>
         <span v-else>
           重新上架

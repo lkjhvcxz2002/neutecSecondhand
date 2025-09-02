@@ -35,7 +35,7 @@ class RailwayVolume {
       } else {
         // 本地開發環境
         this.volumePath = null;
-        this.databasePath = './database/secondhand.db';
+        this.databasePath = './database/database.sqlite';
         this.uploadsPath = './uploads';
         this.avatarsPath = './uploads/avatars';
         this.productsPath = './uploads/products';
