@@ -253,10 +253,16 @@ const sendAccountStatusEmail = async (userEmail, userName, status, reason = '') 
 };
 
 // 發送商品上架通知郵件
-const sendProductListingNotification = async (product, seller) => {
+const sendProductListingNotification = async (product, seller, options = {}) => {
   try {
     // 管理員通知郵件地址 - 可以從環境變數讀取
     const adminEmail = 'parker.du@neutec.com.tw';
+    
+    // 配置選項
+    const config = {
+      showImages: options.showImages || false, // 預設不顯示圖片
+      imageDisplayMode: options.imageDisplayMode || 'placeholder' // placeholder, inline, none
+    };
     const tradeTypeText = product.trade_type;
     
     // 格式化價格顯示
@@ -299,6 +305,45 @@ const sendProductListingNotification = async (product, seller) => {
               <p style="color: #666; margin: 0;"><strong>Telegram：</strong>${seller.telegram ? `@${seller.telegram}` : '未設定'}</p>
               <p style="color: #666; margin: 0;"><strong>上架時間：</strong>${new Date(product.created_at).toLocaleString('zh-TW')}</p>
             </div>
+            
+            ${product.images && product.images.length > 0 ? `
+            <div style="background-color: #fff3e0; padding: 20px; border-radius: 5px; margin: 20px 0;">
+              <h3 style="color: #f57c00; margin-top: 0;">📸 商品圖片</h3>
+              <p style="color: #666; margin: 0;">共 ${product.images.length} 張圖片</p>
+              <div style="margin-top: 15px;">
+                ${config.imageDisplayMode === 'inline' && config.showImages ? 
+                  // 內嵌圖片模式（可能被郵件服務阻擋）
+                  product.images.slice(0, 3).map((image, index) => `
+                    <div style="display: inline-block; margin: 5px; text-align: center;">
+                      <div style="width: 80px; height: 80px; border-radius: 5px; overflow: hidden; border: 2px solid #e0e0e0;">
+                        <img src="${process.env.FRONTEND_URL || 'http://localhost:3000'}${image}" 
+                             alt="商品圖片 ${index + 1}" 
+                             style="width: 100%; height: 100%; object-fit: cover;">
+                      </div>
+                      <div style="font-size: 10px; color: #999; margin-top: 2px;">圖片 ${index + 1}</div>
+                    </div>
+                  `).join('') :
+                  // 佔位符模式（推薦）
+                  product.images.slice(0, 3).map((image, index) => `
+                    <div style="display: inline-block; margin: 5px; text-align: center;">
+                      <div style="width: 80px; height: 80px; background-color: #f5f5f5; border-radius: 5px; display: flex; align-items: center; justify-content: center; margin-bottom: 5px; border: 2px solid #e0e0e0;">
+                        <span style="color: #999; font-size: 12px; font-weight: bold;">圖片 ${index + 1}</span>
+                      </div>
+                      <div style="font-size: 10px; color: #999; word-break: break-all; max-width: 80px;">
+                        ${image.split('/').pop()}
+                      </div>
+                    </div>
+                  `).join('')
+                }
+                ${product.images.length > 3 ? `<p style="color: #999; margin: 10px 0 0 0; font-size: 12px;">還有 ${product.images.length - 3} 張圖片...</p>` : ''}
+              </div>
+              <div style="background-color: #f0f8ff; padding: 10px; border-radius: 3px; margin-top: 15px;">
+                <p style="color: #666; margin: 0; font-size: 12px;">
+                  💡 <strong>提示：</strong>點擊下方「查看商品詳情」按鈕即可查看完整圖片
+                </p>
+              </div>
+            </div>
+            ` : ''}
             
             <div style="text-align: center; margin: 30px 0;">
               <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/products/${product.id}" 
